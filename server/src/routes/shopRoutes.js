@@ -164,7 +164,7 @@ router.get('/stripe-config', (req, res) => {
 // POST checkout — guest + auto-account + optional full account creation
 router.post('/checkout', async (req, res) => {
   try {
-    const { name, email, phone, address, city, paymentMethod, items, discountCode, notes, createAccount, password } = req.body;
+    const { name, email, phone, address, city, paymentMethod, items, discountCode, notes, createAccount, password, stripePaymentIntentId } = req.body;
 
     if (!name || !phone || !address || !items?.length)
       return res.status(400).json({ message: 'Name, phone, address and items are required' });
@@ -271,14 +271,25 @@ router.post('/checkout', async (req, res) => {
         data: { quantityKg: { decrement: i.quantityKg } }
       }));
 
+    // Stripe payments are pre-collected — mark as paid immediately
+    const isStripePaid = paymentMethod === 'stripe' && stripePaymentIntentId;
+    const paidAmount = isStripePaid ? totalAmount : 0;
+    const paymentStatus = isStripePaid ? 'paid' : 'unpaid';
+
     const [order] = await prisma.$transaction([
       prisma.order.create({
         data: {
           orderNumber: generateOrderNumber(),
           customerId: customer.id,
           totalAmount,
+          paidAmount,
+          paymentStatus,
           deliveryAddress: `${address}, ${city || ''}`,
-          notes: notes || `Payment: ${paymentMethod || 'Cash on Delivery'}`,
+          notes: [
+            notes,
+            isStripePaid ? `Stripe: ${stripePaymentIntentId}` : null,
+            `Method: ${paymentMethod || 'cod'}`
+          ].filter(Boolean).join(' · '),
           source: 'online',
           discountCode: appliedCode?.code || null,
           discountAmount,

@@ -161,7 +161,23 @@ function CheckoutInner() {
           setLoading(false);
           return;
         }
-        toast.success('Payment successful!');
+        toast.success('💳 Card payment confirmed!');
+
+        // Pass intent ID to backend so it marks order as paid
+        const { data } = await api.post('/shop/checkout', {
+          ...form,
+          discountCode: discountResult ? discountCode : undefined,
+          items: items.map(i => ({ productId: i.productId, quantityKg: i.quantityKg })),
+          createAccount: !isCustomer && accountMode === 'create' && !!form.email,
+          password: !isCustomer && accountMode === 'create' && form.email ? acctPw : undefined,
+          stripePaymentIntentId: paymentIntent.id,
+        });
+        if (data.token && data.user) { loginDirect(data.token, data.user); toast.success('Account created!'); }
+        clearCart();
+        navigate(`/order-success/${data.order.orderNumber}`, {
+          state: { order: data.order, whatsappUrl: data.whatsappUrl, shipping: data.shipping, discountAmount: data.discountAmount }
+        });
+        return; // early return — already navigated
       }
 
       const { data } = await api.post('/shop/checkout', {
