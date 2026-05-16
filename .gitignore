@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment variables — NEVER commit secrets
+server/.env
+
+# Build output
+client/dist/
+client/.vite/
+
+# Database (SQLite dev db — use seed.js to recreate)
+server/prisma/dev.db
+server/prisma/dev.db-journal
+server/prisma/*.db-shm
+server/prisma/*.db-wal
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+.idea/
+
+# Prisma generated client (regenerate with npx prisma generate)
+server/node_modules/.prisma/
+
+# Test
+coverage/

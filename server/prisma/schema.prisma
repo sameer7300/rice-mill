@@ -1,0 +1,515 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  password      String
+  role          String   @default("staff") // admin | staff | customer | supplier
+  phone         String?
+  address       String?
+  preferredLang String   @default("en") // en | ur
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  customer      Customer?
+  supplier      Supplier?
+  millBatches   MillBatch[]
+  favorites     Favorite[]
+  reviews       Review[]
+  addresses     Address[]
+  paymentMethods SavedPaymentMethod[]
+  sessions      LoginSession[]
+  loyaltyPoints LoyaltyPoint[]
+  // 2FA
+  twoFactorEnabled     Boolean   @default(false)
+  twoFactorSecret      String?
+  twoFactorBackupCodes String?
+  // Login tracking
+  lastLoginAt   DateTime?
+  lastLoginIp   String?
+  loginAttempts Int       @default(0)
+  lockedUntil   DateTime?
+  // Referral
+  referralCode  String?   @unique
+  referredBy    String?
+  loyaltyBalance Int      @default(0)
+  // Password reset
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+}
+
+model Supplier {
+  id            String     @id @default(cuid())
+  userId        String     @unique
+  user          User       @relation(fields: [userId], references: [id])
+  businessName  String
+  address       String?
+  contactPerson String?
+  phone         String?
+  createdAt     DateTime   @default(now())
+
+  purchases     Purchase[]
+  paddyStock    PaddyStock[]
+}
+
+model Customer {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  businessName  String
+  address       String?
+  contactPerson String?
+  phone         String?
+  creditLimit   Float    @default(0)
+  createdAt     DateTime @default(now())
+
+  orders        Order[]
+}
+
+model PaddyStock {
+  id            String   @id @default(cuid())
+  variety       String
+  quantityKg    Float
+  qualityGrade  String   @default("A") // A | B | C
+  supplierId    String?
+  supplier      Supplier? @relation(fields: [supplierId], references: [id])
+  purchasePrice Float    @default(0)
+  receivedAt    DateTime @default(now())
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  millBatches   MillBatch[]
+}
+
+model RiceStock {
+  id          String   @id @default(cuid())
+  variety     String
+  grade       String   @default("A")
+  quantityKg  Float
+  pricePerKg  Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems  OrderItem[]
+  products    Product[]
+}
+
+model MillBatch {
+  id             String   @id @default(cuid())
+  batchNumber    String   @unique
+  paddyStockId   String
+  paddyStock     PaddyStock @relation(fields: [paddyStockId], references: [id])
+  inputQuantityKg  Float
+  outputQuantityKg Float?
+  yieldPercent   Float?
+  outputGrade    String?
+  status         String   @default("pending") // pending | in_progress | completed
+  startedAt      DateTime?
+  completedAt    DateTime?
+  staffId        String?
+  staff          User?    @relation(fields: [staffId], references: [id])
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
+  customerId      String
+  customer        Customer    @relation(fields: [customerId], references: [id])
+  status          String      @default("pending") // pending | confirmed | processing | shipped | delivered | cancelled
+  totalAmount     Float       @default(0)
+  paidAmount      Float       @default(0)
+  paymentStatus   String      @default("unpaid") // unpaid | partial | paid
+  deliveryAddress String?
+  notes           String?
+  source          String      @default("internal") // internal | online
+  discountCode       String?
+  discountAmount     Float       @default(0)
+  courierName        String?
+  trackingNumber     String?
+  estimatedDelivery  DateTime?
+  loyaltyPointsEarned Int       @default(0)
+  createdAt          DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id          String    @id @default(cuid())
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id])
+  riceStockId String?
+  riceStock   RiceStock? @relation(fields: [riceStockId], references: [id])
+  variety     String
+  grade       String
+  quantityKg  Float
+  pricePerKg  Float
+  totalPrice  Float
+  createdAt   DateTime  @default(now())
+}
+
+model Purchase {
+  id            String   @id @default(cuid())
+  supplierId    String
+  supplier      Supplier @relation(fields: [supplierId], references: [id])
+  variety       String
+  quantityKg    Float
+  pricePerKg    Float
+  totalAmount   Float
+  paymentStatus String   @default("unpaid") // unpaid | partial | paid
+  paidAmount    Float    @default(0)
+  receivedAt    DateTime @default(now())
+  notes         String?
+  createdAt     DateTime @default(now())
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  category    String   // electricity | maintenance | labour | transport | other
+  amount      Float
+  description String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
+
+model Agent {
+  id           String     @id @default(cuid())
+  name         String
+  type         String     // inventory_monitor | order_processor | finance_analyst | customer_relations | mill_optimizer | demand_forecaster | custom
+  description  String?
+  instructions String?    // optional custom instructions override
+  schedule     String     @default("manual") // manual | hourly | daily | weekly
+  isActive     Boolean    @default(true)
+  autoActions  Boolean    @default(false)
+  lastRunAt    DateTime?
+  lastStatus   String?    // idle | running | completed | failed
+  createdById  String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  runs         AgentRun[]
+  alerts       AgentAlert[]
+}
+
+model AgentRun {
+  id        String   @id @default(cuid())
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  status    String   @default("running") // running | completed | failed
+  task      String?
+  result    String?  // JSON: { summary, recommendations, data }
+  actions   String?  // JSON: array of actions taken
+  toolCalls Int      @default(0)
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+}
+
+model AgentAlert {
+  id        String   @id @default(cuid())
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  priority  String   @default("medium") // low | medium | high | critical
+  category  String   @default("info")   // info | warning | action | insight
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ─── E-COMMERCE ──────────────────────────────────────────────────────────────
+
+model Product {
+  id                  String     @id @default(cuid())
+  name                String
+  variety             String
+  grade               String     @default("A")
+  sku                 String?    @unique
+  shortDescription    String?
+  description         String?
+  imageUrl            String?
+  pricePerKg          Float
+  minOrderKg          Float      @default(10)
+  maxOrderKg          Float?
+  isPublished         Boolean    @default(false)
+  inStock             Boolean    @default(true)
+  tags                String?
+  riceStockId         String?
+  riceStock           RiceStock? @relation(fields: [riceStockId], references: [id])
+  sortOrder           Int        @default(0)
+  // Specifications
+  weight              Float?
+  packaging           String?
+  origin              String?
+  processingType      String?
+  moistureContent     String?
+  grainLength         String?
+  cookingTime         String?
+  aroma               String?
+  brokenGrain         String?
+  certifications      String?
+  shelfLife           String?
+  storageInstructions String?
+  nutritionInfo       String?
+  // SEO
+  metaTitle           String?
+  metaDescription     String?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  favorites           Favorite[]
+  reviews             Review[]
+  recentlyViewed      RecentlyViewed[]
+  stockAlerts         StockAlert[]
+}
+
+model StoreSettings {
+  id                String   @id @default(cuid())
+  storeName         String   @default("Pakistan Rice Mill")
+  tagline           String   @default("Premium Quality Rice, Direct from Mill")
+  phone             String?
+  email             String?
+  address           String?
+  city              String?
+  whatsappNumber    String?
+  currency          String   @default("PKR")
+  shippingFee       Float    @default(500)
+  freeShippingAbove Float    @default(10000)
+  minOrderKg        Float    @default(10)
+  isOpen            Boolean  @default(true)
+  bannerTitle             String?
+  bannerSubtitle          String?
+  notifyOrderConfirm      Boolean  @default(true)
+  notifyStatusUpdate      Boolean  @default(true)
+  notifyPayment           Boolean  @default(true)
+  notifyLowStock          Boolean  @default(true)
+  updatedAt               DateTime @updatedAt
+}
+
+model Discount {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  description String?
+  type        String    @default("percentage") // percentage | fixed
+  value       Float
+  minOrderAmt Float     @default(0)
+  usageLimit  Int       @default(0)
+  usedCount   Int       @default(0)
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+}
+
+// ─── COMMUNITY / CONTENT ─────────────────────────────────────────────────────
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  @@unique([userId, productId])
+}
+
+model Review {
+  id               String   @id @default(cuid())
+  userId           String
+  productId        String
+  rating           Int      // 1-5
+  comment          String?
+  status           String   @default("pending") // pending | approved | rejected
+  adminNote        String?
+  verifiedPurchase Boolean  @default(false)
+  helpfulCount     Int      @default(0)
+  reportCount      Int      @default(0)
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  @@unique([userId, productId])
+}
+
+model Newsletter {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  subscribedAt DateTime @default(now())
+  isActive     Boolean  @default(true)
+}
+
+model BlogPost {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  excerpt     String?
+  content     String
+  coverImage  String?
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Career {
+  id           String              @id @default(cuid())
+  title        String
+  department   String
+  location     String
+  type         String              // full-time | part-time | contract
+  description  String
+  isOpen       Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  applications CareerApplication[]
+}
+
+model CareerApplication {
+  id          String   @id @default(cuid())
+  careerId    String
+  name        String
+  email       String
+  phone       String
+  resumeUrl   String?
+  coverLetter String?
+  status      String   @default("pending") // pending | reviewed | rejected
+  createdAt   DateTime @default(now())
+  career      Career   @relation(fields: [careerId], references: [id], onDelete: Cascade)
+}
+
+model WhatsAppLog {
+  id         String   @id @default(cuid())
+  orderId    String?
+  customerId String?
+  type       String   // order_confirm | status_update | payment | low_stock | review_approved
+  phone      String
+  message    String
+  status     String   @default("sent") // sent | failed | pending
+  createdAt  DateTime @default(now())
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ─── ADDRESS & PAYMENTS ───────────────────────────────────────────────────────
+
+model Address {
+  id           String   @id @default(cuid())
+  userId       String
+  label        String   @default("Home")
+  fullName     String
+  phone        String
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  state        String
+  postalCode   String?
+  country      String   @default("Pakistan")
+  latitude     Float?
+  longitude    Float?
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SavedPaymentMethod {
+  id            String   @id @default(cuid())
+  userId        String
+  type          String   // cod | bank_transfer | easypaisa | jazzcash
+  label         String
+  accountTitle  String?
+  accountNumber String?
+  bankName      String?
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── AUTH / SESSIONS ──────────────────────────────────────────────────────────
+
+model LoginSession {
+  id          String   @id @default(cuid())
+  userId      String
+  token       String   @unique
+  device      String?
+  ip          String?
+  location    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  expiresAt   DateTime
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── RECENTLY VIEWED ─────────────────────────────────────────────────────────
+
+model RecentlyViewed {
+  id        String   @id @default(cuid())
+  userId    String?
+  sessionId String?
+  productId String
+  viewedAt  DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+// ─── STOCK ALERTS ─────────────────────────────────────────────────────────────
+
+model StockAlert {
+  id        String   @id @default(cuid())
+  userId    String?
+  email     String
+  phone     String?
+  productId String
+  notifyVia String   @default("email")
+  isSent    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+// ─── WHOLESALE ────────────────────────────────────────────────────────────────
+
+model WholesaleInquiry {
+  id           String    @id @default(cuid())
+  productId    String?
+  customerId   String?
+  name         String
+  email        String
+  phone        String
+  quantityKg   Float
+  requiredBy   DateTime?
+  deliveryCity String
+  message      String?
+  status       String    @default("new")
+  adminNote    String?
+  quotedPrice  Float?
+  createdAt    DateTime  @default(now())
+}
+
+// ─── LOYALTY ──────────────────────────────────────────────────────────────────
+
+model LoyaltyPoint {
+  id          String   @id @default(cuid())
+  userId      String
+  points      Int
+  type        String   // order_earned | review_bonus | referral | redeemed | manual
+  description String
+  orderId     String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
