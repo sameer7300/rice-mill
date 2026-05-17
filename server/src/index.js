@@ -3,6 +3,7 @@ const http = require('http');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 
 const authRoutes = require('./routes/authRoutes');
@@ -39,8 +40,9 @@ const faqRoutes = require('./routes/faqRoutes');
 const { setupSocket } = require('./socket');
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 // __dirname = server/src/ so ../uploads = server/uploads/ (where multer saves files)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {

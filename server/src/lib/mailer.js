@@ -458,6 +458,148 @@ ${infoBox(`<strong>SMTP Host:</strong> ${process.env.SMTP_HOST}<br>
 
 // ─── Exports ──────────────────────────────────────────────────────────────────
 
+// ─── CAREER EMAILS ────────────────────────────────────────────────────────────
+
+async function sendApplicationReceivedEmail(to, name, jobTitle) {
+  const transporter = getTransporter();
+  if (!transporter) return;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:22px;color:#14532d;">Application Received! 🎉</h2>
+    <p style="margin:0 0 12px;font-size:15px;color:#374151;line-height:1.6;">Hi <strong>${name}</strong>,</p>
+    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">Thank you for applying for the <strong>${jobTitle}</strong> position at Al-Noor Rice Mills.</p>
+    ${infoBox(`<strong>What happens next?</strong><br><br>
+      ✅ Your application has been received and is under review.<br>
+      📋 Our team will carefully review your qualifications.<br>
+      📞 If shortlisted, we will contact you within 7–10 business days.`)}
+    <p style="margin:16px 0 0;font-size:14px;color:#6b7280;line-height:1.6;">We appreciate your interest in joining our team. Al-Noor Rice Mills is committed to building a talented, diverse workforce that shares our passion for quality.</p>`;
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM,
+    to,
+    subject: `Application Received — ${jobTitle} | Al-Noor Rice Mills`,
+    html: base(content, `We received your application for ${jobTitle}`),
+  }).catch(() => {});
+}
+
+async function sendApplicationUnderReviewEmail(to, name, jobTitle) {
+  const transporter = getTransporter();
+  if (!transporter) return;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:22px;color:#14532d;">Your Application Is Under Review 🔍</h2>
+    <p style="margin:0 0 12px;font-size:15px;color:#374151;line-height:1.6;">Hi <strong>${name}</strong>,</p>
+    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">Great news! Your application for <strong>${jobTitle}</strong> has moved to the review stage.</p>
+    ${infoBox(`Our hiring team is actively reviewing your profile and qualifications. We will be in touch soon with further updates.`)}
+    <p style="margin:16px 0 0;font-size:14px;color:#6b7280;line-height:1.6;">Thank you for your patience. We take the time to carefully evaluate every candidate to find the best fit.</p>`;
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM,
+    to,
+    subject: `Application Update — ${jobTitle} | Al-Noor Rice Mills`,
+    html: base(content, `Your application for ${jobTitle} is being reviewed`),
+  }).catch(() => {});
+}
+
+async function sendInterviewInvitationEmail(to, name, jobTitle, interviewDate, interviewMode, notes) {
+  const transporter = getTransporter();
+  if (!transporter) return;
+  const modeLabel = { online: 'Online (Video Call)', onsite: 'On-site (Our Office)', phone: 'Phone Call' }[interviewMode] || interviewMode;
+  const dateStr = interviewDate ? new Date(interviewDate).toLocaleString('en-PK', { dateStyle: 'full', timeStyle: 'short', timeZone: 'Asia/Karachi' }) : 'To be confirmed';
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:22px;color:#14532d;">Interview Invitation 🗓️</h2>
+    <p style="margin:0 0 12px;font-size:15px;color:#374151;line-height:1.6;">Hi <strong>${name}</strong>,</p>
+    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">Congratulations! We are pleased to invite you for an interview for the <strong>${jobTitle}</strong> position.</p>
+    ${infoBox(`<strong>Interview Details:</strong><br><br>
+      📅 <strong>Date & Time:</strong> ${dateStr} PKT<br>
+      📍 <strong>Format:</strong> ${modeLabel}<br>
+      ${notes ? `📝 <strong>Notes:</strong> ${notes}` : ''}`)}
+    <p style="margin:16px 0;font-size:15px;color:#374151;line-height:1.6;">Please confirm your availability by replying to this email. If you need to reschedule, contact us at least 24 hours in advance.</p>
+    <p style="margin:0;font-size:14px;color:#6b7280;">📞 ${BRAND.phone} &nbsp;·&nbsp; ✉️ ${BRAND.email}</p>`;
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM,
+    to,
+    subject: `Interview Invitation — ${jobTitle} | Al-Noor Rice Mills`,
+    html: base(content, `You've been invited to interview for ${jobTitle}`),
+  }).catch(() => {});
+}
+
+async function sendOfferLetterEmail(to, name, jobTitle, offerAmount, offerExpiry) {
+  const transporter = getTransporter();
+  if (!transporter) return;
+  const expiryStr = offerExpiry ? new Date(offerExpiry).toLocaleDateString('en-PK', { dateStyle: 'long' }) : '7 days from receipt';
+  const salaryStr = offerAmount ? `PKR ${offerAmount.toLocaleString('en-PK')} per month` : 'As discussed';
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:22px;color:#14532d;">Offer Letter — Congratulations! 🎊</h2>
+    <p style="margin:0 0 12px;font-size:15px;color:#374151;line-height:1.6;">Dear <strong>${name}</strong>,</p>
+    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">We are delighted to extend a job offer for the position of <strong>${jobTitle}</strong> at Al-Noor Rice Mills.</p>
+    ${infoBox(`<strong>Offer Summary:</strong><br><br>
+      💼 <strong>Position:</strong> ${jobTitle}<br>
+      💰 <strong>Compensation:</strong> ${salaryStr}<br>
+      ⏰ <strong>Offer Valid Until:</strong> ${expiryStr}`)}
+    <p style="margin:16px 0;font-size:15px;color:#374151;line-height:1.6;">Please review the offer carefully. To accept, reply to this email or contact us directly. We look forward to welcoming you to our team!</p>
+    <p style="margin:0;font-size:14px;color:#6b7280;">📞 ${BRAND.phone} &nbsp;·&nbsp; ✉️ ${BRAND.email}</p>`;
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM,
+    to,
+    subject: `Job Offer — ${jobTitle} | Al-Noor Rice Mills`,
+    html: base(content, `Congratulations! You have received a job offer`),
+  }).catch(() => {});
+}
+
+async function sendApplicationAcceptedEmail(to, name, jobTitle, loginEmail, tempPassword) {
+  const transporter = getTransporter();
+  if (!transporter) return;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:22px;color:#14532d;">Welcome to Al-Noor Rice Mills! 🌾</h2>
+    <p style="margin:0 0 12px;font-size:15px;color:#374151;line-height:1.6;">Dear <strong>${name}</strong>,</p>
+    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">We are thrilled to confirm your acceptance to join Al-Noor Rice Mills as <strong>${jobTitle}</strong>. Your staff account has been created:</p>
+    ${infoBox(`<strong>Your Login Credentials:</strong><br><br>
+      📧 <strong>Email:</strong> ${loginEmail}<br>
+      🔑 <strong>Temporary Password:</strong> <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;font-family:monospace;">${tempPassword}</code><br><br>
+      ⚠️ You will be required to change your password on first login.`)}
+    <div style="text-align:center;margin:24px 0;">${btn('Login to Dashboard', `${BRAND.url}/login`)}</div>
+    <p style="margin:16px 0 0;font-size:14px;color:#6b7280;line-height:1.6;">If you have any questions about onboarding, please contact HR at ${BRAND.email} or call ${BRAND.phone}.</p>`;
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM,
+    to,
+    subject: `Welcome to the Team — Account Created | Al-Noor Rice Mills`,
+    html: base(content, `Your staff account at Al-Noor Rice Mills has been created`),
+  }).catch(() => {});
+}
+
+async function sendApplicationRejectedEmail(to, name, jobTitle, reason) {
+  const transporter = getTransporter();
+  if (!transporter) return;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:22px;color:#14532d;">Application Update</h2>
+    <p style="margin:0 0 12px;font-size:15px;color:#374151;line-height:1.6;">Dear <strong>${name}</strong>,</p>
+    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">Thank you for your interest in the <strong>${jobTitle}</strong> position at Al-Noor Rice Mills and for the time you invested in your application.</p>
+    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">After careful consideration, we regret to inform you that we will not be moving forward with your application at this time.</p>
+    ${reason ? dangerBox(`<strong>Feedback:</strong><br>${reason}`) : ''}
+    <p style="margin:16px 0 0;font-size:14px;color:#6b7280;line-height:1.6;">We encourage you to apply for future positions that match your skills. We wish you the best in your career journey.</p>`;
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM,
+    to,
+    subject: `Application Status — ${jobTitle} | Al-Noor Rice Mills`,
+    html: base(content, `An update regarding your application for ${jobTitle}`),
+  }).catch(() => {});
+}
+
+async function sendNewApplicationNotificationEmail(jobTitle, applicantName, applicantEmail, applicationId) {
+  const transporter = getTransporter();
+  if (!transporter) return;
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:22px;color:#14532d;">New Job Application Received</h2>
+    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">A new application has been submitted:</p>
+    ${infoBox(`<strong>Position:</strong> ${jobTitle}<br>
+      <strong>Applicant:</strong> ${applicantName}<br>
+      <strong>Email:</strong> ${applicantEmail}`)}
+    <div style="text-align:center;margin:24px 0;">${btn('Review Application', `${BRAND.url}/dashboard/careers`)}</div>`;
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM,
+    to: BRAND.email,
+    subject: `New Application: ${jobTitle} — ${applicantName}`,
+    html: base(content, `New application received for ${jobTitle}`),
+  }).catch(() => {});
+}
+
 module.exports = {
   // Primary (new)
   sendWelcomeEmail,
@@ -476,6 +618,14 @@ module.exports = {
   send2FAEnabledEmail,
   sendNewsletterBlast,
   sendTestEmail,
+  // Career emails
+  sendApplicationReceivedEmail,
+  sendApplicationUnderReviewEmail,
+  sendInterviewInvitationEmail,
+  sendOfferLetterEmail,
+  sendApplicationAcceptedEmail,
+  sendApplicationRejectedEmail,
+  sendNewApplicationNotificationEmail,
   // Legacy aliases — keeps existing route code working without changes
   sendRegistrationWelcome: sendWelcomeEmail,
   sendNewsletterWelcome: sendNewsletterWelcomeEmail,

@@ -47,6 +47,9 @@ model User {
   // Password reset
   passwordResetToken   String?
   passwordResetExpires DateTime?
+  // Security
+  mustChangePassword   Boolean   @default(false)
+  refreshTokens        RefreshToken[]
 }
 
 model Supplier {
@@ -367,28 +370,57 @@ model BlogPost {
 }
 
 model Career {
-  id           String              @id @default(cuid())
-  title        String
-  department   String
-  location     String
-  type         String              // full-time | part-time | contract
-  description  String
-  isOpen       Boolean             @default(true)
-  createdAt    DateTime            @default(now())
-  applications CareerApplication[]
+  id               String              @id @default(cuid())
+  title            String
+  department       String
+  location         String
+  type             String              // full-time | part-time | contract | internship
+  experienceLevel  String              @default("mid") // entry | mid | senior | manager | director
+  salaryMin        Float?
+  salaryMax        Float?
+  showSalary       Boolean             @default(true)
+  description      String
+  responsibilities String?             // JSON array
+  requirements     String?             // JSON array
+  niceToHave       String?             // JSON array
+  benefits         String?             // JSON array
+  deadline         DateTime?
+  isOpen           Boolean             @default(true)
+  isFeatured       Boolean             @default(false)
+  bannerImage      String?
+  totalApplications Int               @default(0)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  applications     CareerApplication[]
 }
 
 model CareerApplication {
-  id          String   @id @default(cuid())
-  careerId    String
-  name        String
-  email       String
-  phone       String
-  resumeUrl   String?
-  coverLetter String?
-  status      String   @default("pending") // pending | reviewed | rejected
-  createdAt   DateTime @default(now())
-  career      Career   @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  id              String    @id @default(cuid())
+  careerId        String
+  name            String
+  email           String
+  phone           String
+  resumeUrl       String?
+  resumeName      String?   // original filename
+  coverLetter     String?
+  linkedInUrl     String?
+  portfolioUrl    String?
+  expectedSalary  Float?
+  noticePeriod    String?
+  source          String?   // website | referral | linkedin | indeed
+  status          String    @default("applied") // applied | reviewing | interview_scheduled | offered | accepted | rejected
+  interviewDate   DateTime?
+  interviewMode   String?   // online | onsite | phone
+  interviewNotes  String?
+  offerAmount     Float?
+  offerExpiry     DateTime?
+  rejectionReason String?
+  adminNote       String?
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  career          Career    @relation(fields: [careerId], references: [id], onDelete: Cascade)
 }
 
 model WhatsAppLog {
@@ -398,7 +430,9 @@ model WhatsAppLog {
   type       String   // order_confirm | status_update | payment | low_stock | review_approved
   phone      String
   message    String
-  status     String   @default("sent") // sent | failed | pending
+  status     String   @default("sent") // sent | failed | pending | mock
+  error      String?
+  externalId String?  // Twilio message SID
   createdAt  DateTime @default(now())
 }
 
@@ -598,6 +632,20 @@ model ChatMessage {
 
   conversation   ChatConversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         User?             @relation(fields: [senderId], references: [id])
+}
+
+// ─── REFRESH TOKENS ───────────────────────────────────────────────────────────
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
+  userAgent String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // ─── LOYALTY ──────────────────────────────────────────────────────────────────

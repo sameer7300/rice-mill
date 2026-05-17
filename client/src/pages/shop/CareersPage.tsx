@@ -1,134 +1,719 @@
-import { useEffect, useState } from 'react';
-import { MapPin, Briefcase, Clock, ChevronDown, ChevronUp, Send } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import {
+  MapPin, Briefcase, Clock, ChevronDown, Send, Upload, X,
+  Users, Star, Zap, Heart, Globe, TrendingUp, CheckCircle2,
+  Paperclip, ExternalLink, AlertCircle,
+} from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 import api from '../../api';
 import toast from 'react-hot-toast';
-import Modal from '../../components/ui/Modal';
-import { inputCls } from '../../components/ui/PageHeader';
 import PageTransition from '../../components/PageTransition';
 
-const TYPE_COLOR: Record<string, string> = {
-  'full-time': 'bg-green-100 text-green-700',
-  'part-time': 'bg-blue-100 text-blue-700',
-  'contract': 'bg-orange-100 text-orange-700',
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface Job {
+  id: string;
+  title: string;
+  department: string;
+  location: string;
+  type: string;
+  experienceLevel: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  showSalary?: boolean;
+  description: string;
+  responsibilities: string[];
+  requirements: string[];
+  niceToHave: string[];
+  benefits: string[];
+  deadline?: string;
+  isFeatured?: boolean;
+  totalApplications?: number;
+  createdAt: string;
+}
+
+interface AppForm {
+  name: string;
+  email: string;
+  phone: string;
+  coverLetter: string;
+  linkedInUrl: string;
+  portfolioUrl: string;
+  expectedSalary: string;
+  noticePeriod: string;
+  resumeUrl: string;
+  resumeName: string;
+}
+
+const EMPTY_FORM: AppForm = {
+  name: '', email: '', phone: '', coverLetter: '',
+  linkedInUrl: '', portfolioUrl: '', expectedSalary: '', noticePeriod: '',
+  resumeUrl: '', resumeName: '',
 };
 
-export default function CareersPage() {
-  const [jobs, setJobs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const [applying, setApplying] = useState<any>(null);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', coverLetter: '' });
+const TYPE_LABELS: Record<string, string> = {
+  'full-time': 'Full-Time', 'part-time': 'Part-Time', 'contract': 'Contract', 'internship': 'Internship',
+};
+const TYPE_COLORS: Record<string, string> = {
+  'full-time': 'bg-emerald-100 text-emerald-700',
+  'part-time': 'bg-blue-100 text-blue-700',
+  'contract': 'bg-amber-100 text-amber-700',
+  'internship': 'bg-purple-100 text-purple-700',
+};
+const LEVEL_LABELS: Record<string, string> = {
+  entry: 'Entry Level', mid: 'Mid Level', senior: 'Senior', manager: 'Manager', director: 'Director',
+};
+const NOTICE_OPTIONS = ['Immediately', '1 week', '2 weeks', '1 month', '2 months', '3 months'];
+
+// ─── Animated empty state (swaying rice stalk) ───────────────────────────────
+function EmptyState() {
+  return (
+    <motion.div
+      className="flex flex-col items-center justify-center py-24 text-center"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <div className="relative w-48 h-48 mb-6">
+        {/* Soil */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-4 bg-amber-900/30 rounded-full blur-sm" />
+        {/* Stalk */}
+        <motion.div
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 origin-bottom"
+          animate={{ rotate: [-3, 3, -3] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          {/* Stem */}
+          <div className="w-1.5 h-28 bg-gradient-to-t from-amber-700 to-green-500 rounded-full mx-auto" />
+          {/* Leaves */}
+          <motion.div
+            className="absolute top-10 -left-8 w-10 h-4 bg-green-500 rounded-full origin-right"
+            style={{ transform: 'rotate(-30deg)' }}
+            animate={{ rotate: [-30, -20, -30] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+          />
+          <motion.div
+            className="absolute top-16 -right-7 w-9 h-3.5 bg-green-600 rounded-full origin-left"
+            style={{ transform: 'rotate(25deg)' }}
+            animate={{ rotate: [25, 15, 25] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+          />
+          {/* Grain head */}
+          <motion.div
+            className="absolute -top-10 left-1/2 -translate-x-1/2"
+            animate={{ rotate: [-5, 8, -5] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: 0.1 }}
+          >
+            {[...Array(7)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-2 h-5 bg-amber-400 rounded-full"
+                style={{
+                  left: `${Math.sin(i * 0.9) * 12}px`,
+                  top: `${-i * 6}px`,
+                  transform: `rotate(${i * 20 - 60}deg)`,
+                  opacity: 0.8 + i * 0.03,
+                }}
+              />
+            ))}
+          </motion.div>
+        </motion.div>
+
+        {/* Floating grain particles */}
+        {[...Array(5)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1.5 h-3 bg-amber-300 rounded-full opacity-60"
+            style={{ left: `${30 + i * 18}px`, top: `${40 + (i % 3) * 20}px` }}
+            animate={{ y: [-4, 4, -4], opacity: [0.4, 0.8, 0.4] }}
+            transition={{ duration: 1.8 + i * 0.4, repeat: Infinity, delay: i * 0.3 }}
+          />
+        ))}
+      </div>
+
+      <h3 className="text-2xl font-bold text-green-900 mb-2">No Open Positions Right Now</h3>
+      <p className="text-gray-500 max-w-sm leading-relaxed">
+        Our fields are tended, our mill is humming. Check back soon — new opportunities grow with every season.
+      </p>
+      <p className="mt-4 text-sm text-gray-400">
+        Interested in future roles? Email us at{' '}
+        <a href="mailto:ricemill@sameergul.com" className="text-green-600 hover:underline">
+          ricemill@sameergul.com
+        </a>
+      </p>
+    </motion.div>
+  );
+}
+
+// ─── Perks section ────────────────────────────────────────────────────────────
+const PERKS = [
+  { icon: Heart, label: 'Health & Wellbeing', desc: 'Comprehensive health coverage for you and your family' },
+  { icon: TrendingUp, label: 'Growth & Learning', desc: 'Continuous training and career development programs' },
+  { icon: Globe, label: 'Community Impact', desc: 'Be part of a business that uplifts an entire region' },
+  { icon: Zap, label: 'Innovation Culture', desc: 'AI-powered operations — work with cutting-edge tools' },
+  { icon: Users, label: 'Collaborative Team', desc: 'A tight-knit team with decades of combined experience' },
+  { icon: Star, label: 'Performance Rewards', desc: 'Competitive salaries, bonuses, and loyalty recognition' },
+];
+
+// ─── Application Modal ────────────────────────────────────────────────────────
+function ApplicationModal({
+  job, onClose, onSuccess,
+}: { job: Job; onClose: () => void; onSuccess: () => void }) {
+  const [form, setForm] = useState<AppForm>(EMPTY_FORM);
+  const [step, setStep] = useState<1 | 2>(1);
   const [submitting, setSubmitting] = useState(false);
-  const inp = (f: string, v: string) => setForm(p => ({ ...p, [f]: v }));
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    api.get('/careers').then(r => setJobs(r.data)).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+  const set = (f: keyof AppForm, v: string) => setForm(p => ({ ...p, [f]: v }));
 
-  const submitApplication = async (e: React.FormEvent) => {
+  const handleResumeUpload = async (file: File) => {
+    const allowed = /\.(pdf|doc|docx)$/i;
+    if (!allowed.test(file.name)) { toast.error('Only PDF or Word documents allowed'); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error('File must be under 10 MB'); return; }
+    setUploadingResume(true);
+    try {
+      const form = new FormData();
+      form.append('document', file);
+      const res = await api.post('/upload/document', form);
+      set('resumeUrl', res.data.url);
+      set('resumeName', res.data.originalName || file.name);
+      toast.success('Resume uploaded');
+    } catch {
+      toast.error('Upload failed. Try again.');
+    } finally {
+      setUploadingResume(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.name || !form.email || !form.phone) {
+      toast.error('Name, email and phone are required');
+      return;
+    }
     setSubmitting(true);
     try {
-      await api.post(`/careers/${applying.id}/apply`, form);
-      toast.success('Application submitted! We will be in touch.');
-      setApplying(null);
-      setForm({ name: '', email: '', phone: '', coverLetter: '' });
+      await api.post(`/careers/${job.id}/apply`, {
+        ...form,
+        expectedSalary: form.expectedSalary ? parseFloat(form.expectedSalary) : undefined,
+        source: 'website',
+      });
+      onSuccess();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error submitting application');
+      toast.error(err.response?.data?.error || 'Failed to submit application');
     } finally {
       setSubmitting(false);
     }
   };
 
-  return (
-    <PageTransition>
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <section className="bg-gradient-to-r from-green-800 to-green-700 text-white py-16 px-4 text-center">
-        <Briefcase size={40} className="mx-auto mb-4 opacity-80" />
-        <h1 className="text-4xl font-extrabold mb-2">Careers at Rice Mill</h1>
-        <p className="text-green-200">Join our growing team and help shape the future of Pakistani agriculture.</p>
-      </section>
+  const inp = 'w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white';
 
-      <div className="max-w-3xl mx-auto px-4 py-14">
-        {loading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-24 bg-gray-200 rounded-2xl animate-pulse" />)}
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <motion.div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        onClick={onClose}
+      />
+      <motion.div
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+      >
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-start justify-between rounded-t-2xl z-10">
+          <div>
+            <h3 className="font-bold text-gray-900 text-lg leading-tight">Apply for {job.title}</h3>
+            <p className="text-sm text-gray-500 mt-0.5">{job.department} · {job.location}</p>
           </div>
-        ) : jobs.length === 0 ? (
-          <div className="text-center py-20 text-gray-400">
-            <Briefcase size={40} className="mx-auto mb-3 opacity-30" />
-            <p className="font-medium text-gray-600">No open positions at the moment</p>
-            <p className="text-sm mt-1">Check back soon or send your CV to careers@ricemill.pk</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-500 mb-6">{jobs.length} open position{jobs.length !== 1 ? 's' : ''}</p>
-            {jobs.map(job => (
-              <div key={job.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <button className="w-full text-left px-6 py-5 flex items-start justify-between gap-4"
-                  onClick={() => setExpanded(expanded === job.id ? null : job.id)}>
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <h3 className="font-bold text-gray-900 text-lg">{job.title}</h3>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${TYPE_COLOR[job.type] || 'bg-gray-100 text-gray-600'}`}>{job.type}</span>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-400">
-                      <span className="flex items-center gap-1"><Briefcase size={13} /> {job.department}</span>
-                      <span className="flex items-center gap-1"><MapPin size={13} /> {job.location}</span>
-                    </div>
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 transition-colors ml-4 flex-shrink-0">
+            <X size={18} className="text-gray-500" />
+          </button>
+        </div>
+
+        {/* Step tabs */}
+        <div className="px-6 pt-4 flex gap-2">
+          {[1, 2].map(s => (
+            <button
+              key={s}
+              onClick={() => setStep(s as 1 | 2)}
+              className={`flex-1 py-2 text-sm font-semibold rounded-xl border transition-colors ${
+                step === s ? 'bg-green-700 text-white border-green-700' : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-green-300'
+              }`}
+            >
+              {s === 1 ? 'Personal Info' : 'Resume & Details'}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <AnimatePresence mode="wait">
+            {step === 1 ? (
+              <motion.div key="step1" className="space-y-4"
+                initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Full Name *</label>
+                    <input className={inp} placeholder="Your full name" value={form.name} onChange={e => set('name', e.target.value)} required />
                   </div>
-                  {expanded === job.id ? <ChevronUp size={18} className="text-gray-400 flex-shrink-0 mt-1" /> : <ChevronDown size={18} className="text-gray-400 flex-shrink-0 mt-1" />}
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Email *</label>
+                    <input type="email" className={inp} placeholder="you@email.com" value={form.email} onChange={e => set('email', e.target.value)} required />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Phone *</label>
+                    <input className={inp} placeholder="+92 300 1234567" value={form.phone} onChange={e => set('phone', e.target.value)} required />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Expected Salary (PKR/month)</label>
+                    <input type="number" className={inp} placeholder="e.g. 80000" value={form.expectedSalary} onChange={e => set('expectedSalary', e.target.value)} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">LinkedIn Profile</label>
+                    <input type="url" className={inp} placeholder="https://linkedin.com/in/..." value={form.linkedInUrl} onChange={e => set('linkedInUrl', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Portfolio / Website</label>
+                    <input type="url" className={inp} placeholder="https://yoursite.com" value={form.portfolioUrl} onChange={e => set('portfolioUrl', e.target.value)} />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Notice Period</label>
+                  <select className={inp} value={form.noticePeriod} onChange={e => set('noticePeriod', e.target.value)}>
+                    <option value="">Select notice period</option>
+                    {NOTICE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+                <button type="button" onClick={() => setStep(2)}
+                  className="w-full py-3 bg-green-700 hover:bg-green-800 text-white font-semibold rounded-xl transition-colors">
+                  Next: Resume & Details →
                 </button>
-                {expanded === job.id && (
-                  <div className="px-6 pb-6 border-t border-gray-50">
-                    <p className="text-gray-600 leading-relaxed mt-4 whitespace-pre-line">{job.description}</p>
-                    <button onClick={() => setApplying(job)}
-                      className="mt-5 flex items-center gap-2 bg-green-700 hover:bg-green-800 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors">
-                      <Send size={15} /> Apply Now
+              </motion.div>
+            ) : (
+              <motion.div key="step2" className="space-y-4"
+                initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
+                {/* Resume upload */}
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Resume / CV</label>
+                  <input type="file" ref={fileRef} className="hidden" accept=".pdf,.doc,.docx"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleResumeUpload(f); e.target.value = ''; }} />
+                  {form.resumeUrl ? (
+                    <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
+                      <CheckCircle2 size={18} className="text-green-600 flex-shrink-0" />
+                      <span className="text-sm text-green-800 font-medium flex-1 truncate">{form.resumeName}</span>
+                      <button type="button" onClick={() => { set('resumeUrl', ''); set('resumeName', ''); }}
+                        className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0">
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => fileRef.current?.click()} disabled={uploadingResume}
+                      className="w-full border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center gap-2 hover:border-green-400 hover:bg-green-50/40 transition-colors disabled:opacity-50">
+                      {uploadingResume ? (
+                        <motion.div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full"
+                          animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }} />
+                      ) : <Upload size={22} className="text-gray-400" />}
+                      <p className="text-sm font-medium text-gray-600">{uploadingResume ? 'Uploading…' : 'Upload your resume'}</p>
+                      <p className="text-xs text-gray-400">PDF or Word · max 10 MB</p>
                     </button>
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Cover Letter</label>
+                  <textarea className={`${inp} resize-none`} rows={5}
+                    placeholder={`Tell us why you'd be a great fit for ${job.title} at Al-Noor Rice Mills…`}
+                    value={form.coverLetter} onChange={e => set('coverLetter', e.target.value)} />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button type="button" onClick={() => setStep(1)}
+                    className="flex-1 py-3 border border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors">
+                    ← Back
+                  </button>
+                  <button type="submit" disabled={submitting}
+                    className="flex-1 py-3 bg-green-700 hover:bg-green-800 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2">
+                    {submitting ? (
+                      <motion.div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                        animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }} />
+                    ) : <Send size={16} />}
+                    {submitting ? 'Submitting…' : 'Submit Application'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
+
+// ─── Job Card ─────────────────────────────────────────────────────────────────
+function JobCard({ job, onApply }: { job: Job; onApply: (j: Job) => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const shouldReduce = useReducedMotion();
+
+  const salary = job.showSalary && (job.salaryMin || job.salaryMax)
+    ? job.salaryMin && job.salaryMax
+      ? `PKR ${(job.salaryMin / 1000).toFixed(0)}K – ${(job.salaryMax / 1000).toFixed(0)}K/mo`
+      : job.salaryMax ? `Up to PKR ${(job.salaryMax / 1000).toFixed(0)}K/mo` : null
+    : null;
+
+  return (
+    <motion.div
+      layout={!shouldReduce}
+      className={`bg-white rounded-2xl border transition-all duration-200 overflow-hidden ${
+        job.isFeatured ? 'border-amber-300 shadow-amber-100 shadow-md' : 'border-gray-200 hover:border-green-300 hover:shadow-md'
+      }`}
+    >
+      {job.isFeatured && (
+        <div className="bg-amber-50 border-b border-amber-200 px-5 py-2 flex items-center gap-2">
+          <Star size={12} className="text-amber-500 fill-amber-500" />
+          <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Featured Position</span>
+        </div>
+      )}
+
+      <div className="p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap gap-2 mb-2">
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${TYPE_COLORS[job.type] || 'bg-gray-100 text-gray-600'}`}>
+                {TYPE_LABELS[job.type] || job.type}
+              </span>
+              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
+                {LEVEL_LABELS[job.experienceLevel] || job.experienceLevel}
+              </span>
+            </div>
+            <h3 className="font-bold text-gray-900 text-lg leading-snug">{job.title}</h3>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+              <span className="flex items-center gap-1.5 text-sm text-gray-500">
+                <Briefcase size={13} className="text-gray-400" />{job.department}
+              </span>
+              <span className="flex items-center gap-1.5 text-sm text-gray-500">
+                <MapPin size={13} className="text-gray-400" />{job.location}
+              </span>
+              {salary && (
+                <span className="flex items-center gap-1.5 text-sm text-green-700 font-medium">
+                  💰 {salary}
+                </span>
+              )}
+              {job.deadline && (
+                <span className="flex items-center gap-1.5 text-sm text-red-500">
+                  <Clock size={13} />{new Date(job.deadline) < new Date() ? 'Deadline passed' : `Apply by ${new Date(job.deadline).toLocaleDateString('en-PK')}`}
+                </span>
+              )}
+            </div>
           </div>
-        )}
+          <button
+            onClick={() => onApply(job)}
+            className="flex-shrink-0 px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-xl transition-colors"
+          >
+            Apply Now
+          </button>
+        </div>
+
+        <p className="text-sm text-gray-600 leading-relaxed mt-3 line-clamp-2">{job.description}</p>
+
+        <button
+          onClick={() => setExpanded(v => !v)}
+          className="mt-3 flex items-center gap-1.5 text-sm text-green-700 hover:text-green-900 font-medium transition-colors"
+        >
+          {expanded ? 'Show less' : 'View details'}
+          <motion.div animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
+            <ChevronDown size={16} />
+          </motion.div>
+        </button>
       </div>
 
-      {applying && (
-        <Modal title={`Apply: ${applying.title}`} onClose={() => setApplying(null)}>
-          <form onSubmit={submitApplication} className="space-y-4">
-            <div className="p-3 bg-green-50 rounded-xl text-sm text-green-700 border border-green-100">
-              <strong>{applying.department}</strong> · {applying.location} · {applying.type}
-            </div>
-            {[
-              { f: 'name', label: 'Full Name', type: 'text', required: true, placeholder: 'Muhammad Ali' },
-              { f: 'email', label: 'Email Address', type: 'email', required: true, placeholder: 'you@example.com' },
-              { f: 'phone', label: 'Phone Number', type: 'tel', required: true, placeholder: '03xx-xxxxxxx' },
-            ].map(field => (
-              <div key={field.f}>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">{field.label} *</label>
-                <input type={field.type} value={(form as any)[field.f]} onChange={e => inp(field.f, e.target.value)}
-                  required placeholder={field.placeholder} className={inputCls} />
-              </div>
-            ))}
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Cover Letter (optional)</label>
-              <textarea value={form.coverLetter} onChange={e => inp('coverLetter', e.target.value)} rows={4}
-                placeholder="Tell us why you're a great fit..."
-                className={`w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500`} />
-            </div>
-            <div className="flex gap-3 pt-2">
-              <button type="button" onClick={() => setApplying(null)} className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-xl text-sm hover:bg-gray-50">Cancel</button>
-              <button type="submit" disabled={submitting}
-                className="flex-1 bg-green-700 hover:bg-green-800 text-white py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60">
-                {submitting ? 'Submitting...' : 'Submit Application'}
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            key="details"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 pb-5 border-t border-gray-100 pt-4 space-y-4">
+              {job.requirements?.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Requirements</h4>
+                  <ul className="space-y-1.5">
+                    {job.requirements.map((r, i) => (
+                      <li key={i} className="flex gap-2 text-sm text-gray-700">
+                        <CheckCircle2 size={15} className="text-green-500 flex-shrink-0 mt-0.5" />{r}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {job.responsibilities?.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Responsibilities</h4>
+                  <ul className="space-y-1.5">
+                    {job.responsibilities.map((r, i) => (
+                      <li key={i} className="flex gap-2 text-sm text-gray-700">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0 mt-2" />{r}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {job.niceToHave?.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Nice to Have</h4>
+                  <ul className="space-y-1.5">
+                    {job.niceToHave.map((r, i) => (
+                      <li key={i} className="flex gap-2 text-sm text-gray-500">
+                        <Star size={13} className="text-amber-400 flex-shrink-0 mt-0.5" />{r}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {job.benefits?.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Benefits</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {job.benefits.map((b, i) => (
+                      <span key={i} className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full border border-green-100">{b}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <button
+                onClick={() => onApply(job)}
+                className="w-full py-2.5 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-xl transition-colors"
+              >
+                Apply for this Position
               </button>
             </div>
-          </form>
-        </Modal>
-      )}
-    </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+// ─── Success state ────────────────────────────────────────────────────────────
+function SuccessState({ jobTitle, onBack }: { jobTitle: string; onBack: () => void }) {
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+    >
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onBack} />
+      <motion.div
+        className="relative bg-white rounded-2xl shadow-2xl p-10 max-w-sm w-full text-center"
+        initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+      >
+        <motion.div
+          className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5"
+          animate={{ scale: [1, 1.1, 1] }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <CheckCircle2 size={40} className="text-green-600" />
+        </motion.div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">Application Sent!</h3>
+        <p className="text-gray-500 leading-relaxed mb-6">
+          Thank you for applying for <strong>{jobTitle}</strong>. We'll review your application and be in touch within 7–10 business days.
+        </p>
+        <button onClick={onBack} className="w-full py-3 bg-green-700 hover:bg-green-800 text-white font-semibold rounded-xl transition-colors">
+          Back to Careers
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+export default function CareersPage() {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filterDept, setFilterDept] = useState('');
+  const [filterType, setFilterType] = useState('');
+  const [departments, setDepartments] = useState<string[]>([]);
+  const [applying, setApplying] = useState<Job | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    Promise.all([
+      api.get('/careers').catch(() => ({ data: { data: [] } })),
+      api.get('/careers/departments').catch(() => ({ data: { data: [] } })),
+    ]).then(([jobsRes, deptsRes]) => {
+      setJobs(jobsRes.data.data || []);
+      setDepartments(deptsRes.data.data || []);
+    }).finally(() => setLoading(false));
+  }, []);
+
+  const filtered = jobs.filter(j => {
+    if (filterDept && j.department !== filterDept) return false;
+    if (filterType && j.type !== filterType) return false;
+    return true;
+  });
+
+  const handleSuccess = () => {
+    const title = applying?.title || '';
+    setApplying(null);
+    setSuccess(title);
+  };
+
+  return (
+    <PageTransition>
+      <Helmet>
+        <title>Careers — Al-Noor Rice Mills</title>
+        <meta name="description" content="Join Al-Noor Rice Mills — a growing, AI-powered rice mill in Batkhela, Malakand. Explore open positions and grow your career with us." />
+      </Helmet>
+
+      {/* Hero */}
+      <section className="relative bg-gradient-to-br from-green-900 via-green-800 to-green-700 py-24 overflow-hidden">
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: `radial-gradient(circle at 20% 50%, #fbbf24 0%, transparent 50%), radial-gradient(circle at 80% 20%, #22c55e 0%, transparent 40%)`,
+        }} />
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center relative z-10">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <span className="inline-block bg-amber-400/20 border border-amber-300/30 text-amber-300 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full mb-5">
+              Join Our Team
+            </span>
+            <h1 className="text-4xl sm:text-6xl font-black text-white mb-5 leading-tight">
+              Grow with<br />Al-Noor Rice Mills
+            </h1>
+            <p className="text-lg text-green-100 max-w-2xl mx-auto leading-relaxed">
+              Be part of a family business that's shaping the future of Pakistan's rice industry with tradition, technology, and heart.
+            </p>
+          </motion.div>
+
+          {/* Stats */}
+          <motion.div
+            className="flex flex-wrap justify-center gap-10 mt-12"
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+          >
+            {[['15+', 'Years of Excellence'], ['50+', 'Team Members'], ['2010', 'Established'], ['5★', 'Employee Rated']].map(([n, l]) => (
+              <div key={l} className="text-center">
+                <div className="text-3xl font-black text-amber-400">{n}</div>
+                <div className="text-sm text-green-200 mt-1">{l}</div>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Perks */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <h2 className="text-2xl font-bold text-center text-gray-900 mb-10">Why Work With Us?</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {PERKS.map(({ icon: Icon, label, desc }, i) => (
+              <motion.div
+                key={label}
+                className="bg-white rounded-2xl p-5 border border-gray-200 hover:border-green-300 hover:shadow-md transition-all"
+                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.07 }}
+              >
+                <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mb-3">
+                  <Icon size={20} className="text-green-600" />
+                </div>
+                <h3 className="font-bold text-gray-900 mb-1">{label}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Open Positions */}
+      <section className="py-16 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Open Positions</h2>
+              {!loading && <p className="text-sm text-gray-500 mt-1">{jobs.length} {jobs.length === 1 ? 'role' : 'roles'} available</p>}
+            </div>
+            {/* Filters */}
+            <div className="flex gap-2">
+              {departments.length > 0 && (
+                <select
+                  value={filterDept}
+                  onChange={e => setFilterDept(e.target.value)}
+                  className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                >
+                  <option value="">All Departments</option>
+                  {departments.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              )}
+              <select
+                value={filterType}
+                onChange={e => setFilterType(e.target.value)}
+                className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+              >
+                <option value="">All Types</option>
+                {Object.entries(TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-32 bg-gray-100 rounded-2xl animate-pulse" />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <motion.div className="space-y-4">
+              {filtered.map((job, i) => (
+                <motion.div key={job.id}
+                  initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }} transition={{ delay: i * 0.06 }}>
+                  <JobCard job={job} onApply={setApplying} />
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-16 bg-green-900 text-white text-center">
+        <div className="max-w-2xl mx-auto px-4">
+          <h2 className="text-2xl font-bold mb-3">Don't See the Right Role?</h2>
+          <p className="text-green-200 leading-relaxed mb-6">
+            We're always looking for talented people. Send us your resume and we'll keep you in mind for future openings.
+          </p>
+          <a
+            href="mailto:ricemill@sameergul.com?subject=General%20Application%20-%20Al-Noor%20Rice%20Mills"
+            className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-300 text-green-900 font-bold px-8 py-3 rounded-xl transition-colors"
+          >
+            <Send size={16} /> Send General Application
+          </a>
+        </div>
+      </section>
+
+      {/* Application modal */}
+      <AnimatePresence>
+        {applying && (
+          <ApplicationModal
+            key="apply-modal"
+            job={applying}
+            onClose={() => setApplying(null)}
+            onSuccess={handleSuccess}
+          />
+        )}
+        {success && (
+          <SuccessState key="success" jobTitle={success} onBack={() => setSuccess(null)} />
+        )}
+      </AnimatePresence>
     </PageTransition>
   );
 }

@@ -1,14 +1,57 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { randomBytes } = require('crypto');
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const { PrismaClient } = require('@prisma/client');
 const { auth } = require('../middleware/auth');
 const mailer = require('../lib/mailer');
+const logger = require('../lib/logger');
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+const REFRESH_COOKIE = 'refresh_token';
+const REFRESH_TTL_DAYS = 7;
+const ACCESS_TTL = '7d'; // keep 7d for now; can tighten to '15m' once refresh flow is validated
+
+function issueAccessToken(user) {
+  return jwt.sign(
+    { id: user.id, email: user.email, role: user.role, name: user.name },
+    process.env.JWT_SECRET,
+    { expiresIn: ACCESS_TTL }
+  );
+}
+
+async function issueRefreshToken(userId, req) {
+  const raw = randomBytes(40).toString('hex');
+  const expiresAt = new Date(Date.now() + REFRESH_TTL_DAYS * 24 * 60 * 60 * 1000);
+  await prisma.refreshToken.create({
+    data: {
+      userId,
+      token: raw,
+      expiresAt,
+      userAgent: req.headers['user-agent'] || null,
+      ipAddress: req.ip || null,
+    },
+  });
+  return { raw, expiresAt };
+}
+
+function setRefreshCookie(res, raw, expiresAt) {
+  res.cookie(REFRESH_COOKIE, raw, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    expires: expiresAt,
+    path: '/api/auth',
+  });
+}
+
+function clearRefreshCookie(res) {
+  res.clearCookie(REFRESH_COOKIE, { httpOnly: true, path: '/api/auth' });
+}
 
 router.post('/login', async (req, res) => {
   try {
@@ -38,15 +81,15 @@ router.post('/login', async (req, res) => {
       return res.json({ success: true, requiresTwoFactor: true, tempToken });
     }
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, name: user.name },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const token = issueAccessToken(user);
+    const { raw, expiresAt } = await issueRefreshToken(user.id, req);
+    setRefreshCookie(res, raw, expiresAt);
 
     const { password: _, twoFactorSecret: __, twoFactorBackupCodes: ___, ...userSafe } = user;
+    logger.info('User login', { userId: user.id, role: user.role });
     res.json({ success: true, token, user: userSafe });
   } catch (err) {
+    logger.error('Login error', err);
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 });
@@ -292,6 +335,52 @@ router.delete('/sessions', auth, async (req, res) => {
     res.json({ success: true, message: 'All other sessions revoked' });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+// POST /api/auth/refresh — exchange refresh cookie for a new access token
+router.post('/refresh', async (req, res) => {
+  try {
+    const raw = req.cookies?.[REFRESH_COOKIE];
+    if (!raw) return res.status(401).json({ success: false, message: 'No refresh token' });
+
+    const stored = await prisma.refreshToken.findUnique({ where: { token: raw }, include: { user: true } });
+    if (!stored || stored.isRevoked || stored.expiresAt < new Date()) {
+      clearRefreshCookie(res);
+      return res.status(401).json({ success: false, message: 'Refresh token invalid or expired' });
+    }
+
+    const user = stored.user;
+    if (!user.isActive) {
+      clearRefreshCookie(res);
+      return res.status(401).json({ success: false, message: 'Account disabled' });
+    }
+
+    // Rotate: revoke old token, issue new pair
+    await prisma.refreshToken.update({ where: { id: stored.id }, data: { isRevoked: true } });
+    const newToken = issueAccessToken(user);
+    const { raw: newRaw, expiresAt } = await issueRefreshToken(user.id, req);
+    setRefreshCookie(res, newRaw, expiresAt);
+
+    const { password: _, twoFactorSecret: __, twoFactorBackupCodes: ___, mustChangePassword, ...userSafe } = user;
+    res.json({ success: true, token: newToken, user: userSafe, mustChangePassword });
+  } catch (err) {
+    logger.error('Refresh token error', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// POST /api/auth/logout — revoke refresh cookie
+router.post('/logout', async (req, res) => {
+  try {
+    const raw = req.cookies?.[REFRESH_COOKIE];
+    if (raw) {
+      await prisma.refreshToken.updateMany({ where: { token: raw }, data: { isRevoked: true } }).catch(() => {});
+    }
+    clearRefreshCookie(res);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false });
   }
 });
 

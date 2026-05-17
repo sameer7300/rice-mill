@@ -56,6 +56,7 @@ import CareersPage from './pages/shop/CareersPage';
 import BlogPage from './pages/shop/BlogPage';
 import BlogPostPage from './pages/shop/BlogPostPage';
 import WholesalePage from './pages/shop/WholesalePage';
+import NotFoundPage from './pages/NotFoundPage';
 
 function ChatWrapper({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -155,7 +156,7 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AnimatePresence>
   );
