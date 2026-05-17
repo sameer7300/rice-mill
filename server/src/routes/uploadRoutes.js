@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const { v4: uuid } = require('uuid');
+const { randomUUID } = require('crypto');
 const { auth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -13,7 +13,7 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `${uuid()}${ext}`);
+    cb(null, `${randomUUID()}${ext}`);
   },
 });
 
