@@ -179,8 +179,14 @@ export default function Store() {
     toast.success(`${product.name} added to cart`);
   };
   const inCart = (id: string) => items.some(i => i.productId === id);
-  // Vite proxies /uploads → Express, so relative paths work directly
-  const imgSrc = (p: any) => p.imageUrl || PLACEHOLDER[p.variety] || PLACEHOLDER.default;
+  const SERVER = import.meta.env.DEV ? 'http://localhost:5000' : '';
+  const toDisplayUrl = (url: string | null | undefined) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/uploads/')) return `${SERVER}${url}`;
+    return url;
+  };
+  const imgSrc = (p: any) => toDisplayUrl(p.imageUrl) || PLACEHOLDER[p.variety] || PLACEHOLDER.default;
   const formatPKR = (n: number) => `₨${n.toLocaleString()}`;
   const toggleCompare = (id: string) => setCompareIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : prev.length >= 4 ? (toast.error('Max 4'), prev) : [...prev, id]);
   const toggleFav = (id: string) => setFavs(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);

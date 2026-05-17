@@ -11,9 +11,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { springSmooth, fastTween } from '../../utils/animations';
 import PageTransition from '../../components/PageTransition';
 
-// Vite proxies /uploads → Express, so relative /uploads/ paths work directly
+const SERVER = import.meta.env.DEV ? 'http://localhost:5000' : '';
 function toDisplayUrl(url: string | null | undefined): string {
-  return url || '';
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  if (url.startsWith('/uploads/')) return `${SERVER}${url}`;
+  return url;
 }
 
 const GRADE_LABEL: Record<string, string> = { A: 'Premium', B: 'Standard', C: 'Economy' };

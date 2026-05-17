@@ -42,8 +42,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve uploaded files as static assets — CORS headers allow frontend to load images
-app.use('/uploads', express.static(path.join(__dirname, '../../uploads'), {
+// __dirname = server/src/ so ../uploads = server/uploads/ (where multer saves files)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
   maxAge: '7d',
   etag: true,
   setHeaders: (res) => {

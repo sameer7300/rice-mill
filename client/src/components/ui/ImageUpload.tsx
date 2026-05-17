@@ -10,10 +10,16 @@ interface ImageUploadProps {
   hint?: string;
 }
 
-// Vite proxies /uploads → http://localhost:5000/uploads, so relative paths work directly.
-// Full https:// URLs (Unsplash, CDN, etc.) are returned as-is.
+// Build a fully-qualified URL so the browser always knows where to fetch the image.
+// In dev: Vite runs on :3000, Express on :5000 — relative /uploads/ would 404 on :3000.
+// In prod: same origin, so we strip the dev override and use the relative path.
+const SERVER = import.meta.env.DEV ? 'http://localhost:5000' : '';
+
 function toDisplayUrl(url: string): string {
-  return url || '';
+  if (!url) return '';
+  if (url.startsWith('http')) return url;          // external CDN / Unsplash
+  if (url.startsWith('/uploads/')) return `${SERVER}${url}`; // local upload
+  return url;
 }
 
 export default function ImageUpload({ value, onChange, label = 'Image', hint }: ImageUploadProps) {
