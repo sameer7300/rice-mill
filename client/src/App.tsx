@@ -1,4 +1,5 @@
 import './i18n';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { HelmetProvider } from 'react-helmet-async';
@@ -7,6 +8,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LangProvider } from './contexts/LangContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { CartProvider } from './contexts/CartContext';
+import { ChatProvider } from './contexts/ChatContext';
 
 // Admin layout + pages
 import Layout from './components/Layout';
@@ -29,6 +31,7 @@ import DashboardReviews from './pages/DashboardReviews';
 import DashboardMessages from './pages/DashboardMessages';
 import DashboardWholesale from './pages/DashboardWholesale';
 import DashboardLoyalty from './pages/DashboardLoyalty';
+import DashboardChat from './pages/DashboardChat';
 
 // Public shop pages
 import ShopLayout from './pages/shop/ShopLayout';
@@ -51,6 +54,12 @@ import ContactPage from './pages/shop/ContactPage';
 import CareersPage from './pages/shop/CareersPage';
 import BlogPage from './pages/shop/BlogPage';
 import BlogPostPage from './pages/shop/BlogPostPage';
+
+function ChatWrapper({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const token = user ? (localStorage.getItem('token') ?? undefined) : undefined;
+  return <ChatProvider token={token}>{children}</ChatProvider>;
+}
 
 function ProtectedRoute({ children, roles }: { children: any; roles?: string[] }) {
   const { user, loading } = useAuth();
@@ -124,6 +133,7 @@ function AppRoutes() {
           <Route path="wholesale" element={<ProtectedRoute roles={['admin', 'staff']}><DashboardWholesale /></ProtectedRoute>} />
           <Route path="loyalty" element={<ProtectedRoute roles={['admin']}><DashboardLoyalty /></ProtectedRoute>} />
           <Route path="users" element={<ProtectedRoute roles={['admin']}><Users /></ProtectedRoute>} />
+          <Route path="chat" element={<ProtectedRoute roles={['admin', 'staff']}><DashboardChat /></ProtectedRoute>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -140,16 +150,18 @@ export default function App() {
           <AuthProvider>
             <LangProvider>
               <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                <AppRoutes />
-                <Toaster
-                  position="bottom-right"
-                  toastOptions={{
-                    duration: 3000,
-                    style: { borderRadius: '12px', padding: '12px 16px', fontSize: '14px', fontWeight: 500 },
-                    success: { iconTheme: { primary: '#16a34a', secondary: '#fff' }, duration: 3000 },
-                    error: { iconTheme: { primary: '#dc2626', secondary: '#fff' }, duration: 5000 },
-                  }}
-                />
+                <ChatWrapper>
+                  <AppRoutes />
+                  <Toaster
+                    position="bottom-right"
+                    toastOptions={{
+                      duration: 3000,
+                      style: { borderRadius: '12px', padding: '12px 16px', fontSize: '14px', fontWeight: 500 },
+                      success: { iconTheme: { primary: '#16a34a', secondary: '#fff' }, duration: 3000 },
+                      error: { iconTheme: { primary: '#dc2626', secondary: '#fff' }, duration: 5000 },
+                    }}
+                  />
+                </ChatWrapper>
               </BrowserRouter>
             </LangProvider>
           </AuthProvider>

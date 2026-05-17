@@ -1,4 +1,5 @@
 require('dotenv').config();
+const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -30,6 +31,8 @@ const wholesaleRoutes = require('./routes/wholesaleRoutes');
 const stockAlertRoutes = require('./routes/stockAlertRoutes');
 const recentlyViewedRoutes = require('./routes/recentlyViewedRoutes');
 const sitemapRoutes = require('./routes/sitemapRoutes');
+const chatRoutes = require('./routes/chatRoutes');
+const { setupSocket } = require('./socket');
 
 const app = express();
 app.use(cors());
@@ -58,17 +61,20 @@ app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/blog', blogRoutes);
 app.use('/api/careers', careerRoutes);
 app.use('/api/contact', contactRoutes);
-// New routes
 app.use('/api', addressRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/loyalty', loyaltyRouter);
 app.use('/api/wholesale', wholesaleRoutes);
 app.use('/api/stock-alerts', stockAlertRoutes);
 app.use('/api/products', recentlyViewedRoutes);
-// Sitemap + robots (served at root level)
+app.use('/api/chat', chatRoutes);
 app.use('/', sitemapRoutes);
 
-app.get('/api/health', (_, res) => res.json({ success: true, version: '3.0', app: 'Al-Noor Rice Mills' }));
+app.get('/api/health', (_, res) => res.json({ success: true, version: '3.1', app: 'Al-Noor Rice Mills' }));
+
+// Create HTTP server and attach Socket.IO
+const server = http.createServer(app);
+setupSocket(server);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🌾 Al-Noor Rice Mills Server v3.0 running on http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`🌾 Al-Noor Rice Mills Server v3.1 running on http://localhost:${PORT}`));

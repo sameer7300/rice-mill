@@ -12,8 +12,9 @@ import {
   LayoutDashboard, Package, Factory, ShoppingCart,
   Users, Truck, DollarSign, UserCog, LogOut,
   Menu, Languages, Wheat, ChevronRight, BarChart3, Moon, Sun, Search, Bot, Globe,
-  BookOpen, Briefcase, Mail, Star, MessageCircle, Gift, Handshake, ExternalLink
+  BookOpen, Briefcase, Mail, Star, MessageCircle, MessageSquare, Gift, Handshake, ExternalLink
 } from 'lucide-react';
+import { useChat } from '../contexts/ChatContext';
 
 const BREADCRUMBS: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -24,12 +25,14 @@ const BREADCRUMBS: Record<string, string> = {
   '/dashboard/agents': 'AI Agents', '/dashboard/ecommerce': 'E-Commerce',
   '/dashboard/blog': 'Blog', '/dashboard/careers': 'Careers', '/dashboard/newsletter': 'Newsletter',
   '/dashboard/reviews': 'Reviews', '/dashboard/messages': 'Messages',
-  '/dashboard/wholesale': 'Wholesale Inquiries', '/dashboard/loyalty': 'Loyalty Program'
+  '/dashboard/wholesale': 'Wholesale Inquiries', '/dashboard/loyalty': 'Loyalty Program',
+  '/dashboard/chat': 'Live Chat',
 };
 
 export default function Layout() {
   const { t } = useTranslation();
   const { user, logout, isAdmin, isStaff, isCustomer } = useAuth();
+  const { adminUnreadCount } = useChat();
   const { toggleLang, lang } = useLang();
   const { toggleTheme, isDark } = useTheme();
   const navigate = useNavigate();
@@ -52,7 +55,8 @@ export default function Layout() {
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
-  const links = [
+  type NavLinkItem = { to: string; icon: JSX.Element; label: string; show: boolean; badge?: number };
+  const links: NavLinkItem[] = [
     { to: '/dashboard', icon: <LayoutDashboard size={18} />, label: t('nav.dashboard'), show: true },
     { to: '/dashboard/inventory', icon: <Package size={18} />, label: t('nav.inventory'), show: isStaff },
     { to: '/dashboard/mill', icon: <Factory size={18} />, label: t('nav.mill'), show: isStaff },
@@ -68,6 +72,7 @@ export default function Layout() {
     { to: '/dashboard/newsletter', icon: <Mail size={18} />, label: 'Newsletter', show: isAdmin },
     { to: '/dashboard/reviews', icon: <Star size={18} />, label: 'Reviews', show: isStaff },
     { to: '/dashboard/messages', icon: <MessageCircle size={18} />, label: 'Messages', show: isStaff },
+    { to: '/dashboard/chat', icon: <MessageSquare size={18} />, label: 'Live Chat', show: isStaff, badge: adminUnreadCount || 0 },
     { to: '/dashboard/wholesale', icon: <Handshake size={18} />, label: 'Wholesale', show: isStaff },
     { to: '/dashboard/loyalty', icon: <Gift size={18} />, label: 'Loyalty', show: isAdmin },
     { to: '/dashboard/users', icon: <UserCog size={18} />, label: t('nav.users'), show: isAdmin },
@@ -96,8 +101,20 @@ export default function Layout() {
                 isActive ? 'bg-green-600 text-white shadow-lg shadow-green-900/30' : 'text-gray-400 hover:text-white hover:bg-gray-800'
               }`
             }>
-            <span className="flex-shrink-0">{link.icon}</span>
-            {!collapsed && <span className="font-medium truncate">{link.label}</span>}
+            <span className="flex-shrink-0 relative">
+              {link.icon}
+              {collapsed && !!link.badge && (
+                <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center leading-none">
+                  {link.badge > 9 ? '9+' : link.badge}
+                </span>
+              )}
+            </span>
+            {!collapsed && <span className="font-medium truncate flex-1">{link.label}</span>}
+            {!collapsed && !!link.badge && (
+              <span className="ml-auto flex-shrink-0 min-w-[20px] h-5 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                {link.badge > 9 ? '9+' : link.badge}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>

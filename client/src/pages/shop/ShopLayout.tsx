@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import ChatWidget from '../../components/ChatWidget';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -633,6 +634,9 @@ export default function ShopLayout() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Floating chat widget */}
+      <ChatWidget />
     </div>
   );
 }
