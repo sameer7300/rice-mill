@@ -700,19 +700,33 @@ export default function Store() {
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', padding: '5px 12px', background: 'rgba(0,0,0,0.2)', borderRadius: 999 }}>LOADING · TCS FREIGHT</span>
               </div>
             </Reveal>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <Reveal delay={200}>
-                <div style={{ padding: '28px 28px 24px', background: 'var(--paper)', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)' }}>
-                  <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22, lineHeight: 1.3, marginBottom: 18 }}>
-                    "We've shipped twelve containers to UAE this year without a single rejection on grain length."
-                  </p>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <strong style={{ fontFamily: 'var(--font-sans)', fontSize: 14, fontWeight: 500, color: 'var(--ink)', letterSpacing: 0 }}>Bilal Khan</strong>
-                    <span style={{ color: 'var(--mute)' }}>Export Director, Al-Noor</span>
+            {testimonials.length > 0 && (
+              <div style={{ gridColumn: '1 / -1' }}>
+                <Reveal delay={200}>
+                  <div style={{ padding: '28px 28px 24px', background: 'var(--paper)', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)' }}>
+                    <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22, lineHeight: 1.3, marginBottom: 18 }}>
+                      "{testimonials[0].comment?.length > 160
+                        ? testimonials[0].comment.slice(0, 160) + '…'
+                        : testimonials[0].comment}"
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <strong style={{ fontFamily: 'var(--font-sans)', fontSize: 14, fontWeight: 500, color: 'var(--ink)', letterSpacing: 0 }}>
+                          {getDisplayName(testimonials[0].user?.name || 'Customer')}
+                          {testimonials[0].user?.addresses?.[0]?.city ? `, ${testimonials[0].user.addresses[0].city}` : ''}
+                        </strong>
+                        {testimonials[0].product?.name && (
+                          <span style={{ color: 'var(--mute)' }}>{testimonials[0].product.name}</span>
+                        )}
+                      </div>
+                      <span style={{ color: 'var(--saffron)', fontSize: 15, letterSpacing: '0.1em' }}>
+                        {'★'.repeat(testimonials[0].rating)}{'☆'.repeat(5 - testimonials[0].rating)}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </Reveal>
-            </div>
+                </Reveal>
+              </div>
+            )}
           </div>
         </div>
       </section>
