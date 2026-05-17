@@ -1,8 +1,5 @@
-import { useEffect, useRef, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { Float, Sparkles, Environment } from '@react-three/drei';
-import * as THREE from 'three';
 import {
   MapPin, Briefcase, Clock, ChevronDown, Send, Upload, X,
   Users, Star, Zap, Heart, Globe, TrendingUp, CheckCircle2,
@@ -68,127 +65,157 @@ const LEVEL_LABELS: Record<string, string> = {
 };
 const NOTICE_OPTIONS = ['Immediately', '1 week', '2 weeks', '1 month', '2 months', '3 months'];
 
-// ─── 3D Empty State Scene ────────────────────────────────────────────────────
-
-function WheatStalk({ position, phase }: { position: [number, number, number]; phase: number }) {
-  const group = useRef<THREE.Group>(null);
-  useFrame(({ clock }) => {
-    if (!group.current) return;
-    const t = clock.elapsedTime + phase;
-    group.current.rotation.z = Math.sin(t * 0.7) * 0.12;
-  });
-  return (
-    <group ref={group} position={position}>
-      {/* Stem */}
-      <mesh position={[0, 0.6, 0]}>
-        <cylinderGeometry args={[0.025, 0.04, 1.2, 8]} />
-        <meshStandardMaterial color="#65a30d" roughness={0.7} />
-      </mesh>
-      {/* Two leaves */}
-      <mesh position={[-0.12, 0.3, 0]} rotation={[0, 0, -0.7]}>
-        <capsuleGeometry args={[0.025, 0.28, 4, 8]} />
-        <meshStandardMaterial color="#4ade80" roughness={0.6} />
-      </mesh>
-      <mesh position={[0.12, 0.55, 0]} rotation={[0, 0, 0.6]}>
-        <capsuleGeometry args={[0.02, 0.22, 4, 8]} />
-        <meshStandardMaterial color="#4ade80" roughness={0.6} />
-      </mesh>
-      {/* Grain head — cluster of capsules */}
-      {Array.from({ length: 8 }, (_, i) => {
-        const angle = (i / 8) * Math.PI * 2;
-        const r = 0.07;
-        return (
-          <mesh
-            key={i}
-            position={[Math.sin(angle) * r, 1.25 + (i % 2) * 0.06, Math.cos(angle) * r * 0.3]}
-            rotation={[0.3, 0, angle]}
-          >
-            <capsuleGeometry args={[0.03, 0.14, 4, 8]} />
-            <meshStandardMaterial color="#fbbf24" roughness={0.5} metalness={0.05} />
-          </mesh>
-        );
-      })}
-    </group>
-  );
-}
-
-function FloatingGrain({ position, delay }: { position: [number, number, number]; delay: number }) {
-  const ref = useRef<THREE.Mesh>(null);
-  useFrame(({ clock }) => {
-    if (!ref.current) return;
-    const t = clock.elapsedTime + delay;
-    ref.current.position.y = position[1] + Math.sin(t * 0.8) * 0.12;
-    ref.current.rotation.z += 0.008;
-    ref.current.rotation.x += 0.005;
-  });
-  return (
-    <mesh ref={ref} position={position}>
-      <capsuleGeometry args={[0.04, 0.13, 4, 8]} />
-      <meshStandardMaterial color="#fef3c7" roughness={0.4} metalness={0.05} />
-    </mesh>
-  );
-}
-
-function EmptyScene() {
-  const grains = useMemo(() =>
-    Array.from({ length: 18 }, (_, i) => ({
-      position: [(Math.random() - 0.5) * 4, (Math.random() - 0.5) * 2, (Math.random() - 0.5)] as [number, number, number],
-      delay: i * 0.4,
-    })), []);
-
-  return (
-    <>
-      <ambientLight intensity={0.9} />
-      <directionalLight position={[3, 5, 3]} intensity={1.3} />
-      <pointLight position={[-2, 2, 1]} color="#fbbf24" intensity={0.5} />
-      <Environment preset="forest" />
-
-      {/* Wheat stalks cluster */}
-      <WheatStalk position={[0, -1.2, 0]} phase={0} />
-      <WheatStalk position={[-0.55, -1.3, -0.1]} phase={1.2} />
-      <WheatStalk position={[0.55, -1.25, 0.05]} phase={2.1} />
-      <WheatStalk position={[-1.1, -1.35, -0.2]} phase={0.7} />
-      <WheatStalk position={[1.1, -1.3, 0.1]} phase={1.8} />
-
-      {/* Ground */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.4, 0]}>
-        <circleGeometry args={[3, 32]} />
-        <meshStandardMaterial color="#d1fae5" roughness={1} />
-      </mesh>
-
-      {/* Floating grains */}
-      {grains.map((g, i) => <FloatingGrain key={i} {...g} />)}
-
-      <Sparkles count={30} scale={[4, 3, 2]} size={1.2} speed={0.2} opacity={0.5} color="#fbbf24" />
-    </>
-  );
-}
+// ─── Empty State — animated SVG illustration ─────────────────────────────────
 
 function EmptyState() {
   return (
     <motion.div
-      className="flex flex-col items-center justify-center py-12 text-center"
-      initial={{ opacity: 0, y: 16 }}
+      className="flex flex-col items-center justify-center py-16 text-center"
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: 0.5 }}
     >
-      {/* 3D Scene */}
-      <div className="w-full max-w-xs h-64 rounded-3xl overflow-hidden bg-gradient-to-b from-sky-50 to-green-50 mb-6 shadow-inner">
-        <Canvas camera={{ position: [0, 0.2, 4.5], fov: 45 }} gl={{ antialias: true, alpha: true }}>
-          <EmptyScene />
-        </Canvas>
+      {/* Illustration */}
+      <div className="relative mb-8" style={{ width: 260, height: 220 }}>
+        <svg viewBox="0 0 260 220" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+          {/* Sky gradient background circle */}
+          <defs>
+            <radialGradient id="sky" cx="50%" cy="60%" r="55%">
+              <stop offset="0%" stopColor="#ecfdf5" />
+              <stop offset="100%" stopColor="#d1fae5" />
+            </radialGradient>
+            <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#fef3c7" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="#fef3c7" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+          <ellipse cx="130" cy="130" rx="110" ry="85" fill="url(#sky)" />
+
+          {/* Ground / soil */}
+          <ellipse cx="130" cy="192" rx="85" ry="14" fill="#a16207" opacity="0.18" />
+          <ellipse cx="130" cy="192" rx="70" ry="10" fill="#92400e" opacity="0.12" />
+
+          {/* === Wheat stalks === */}
+          {/* Stalk 1 — center, tallest */}
+          <motion.g
+            style={{ originX: '130px', originY: '190px' }}
+            animate={{ rotate: [-3, 3, -3] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            {/* Stem */}
+            <path d="M130 190 C130 170 128 150 130 115" stroke="#65a30d" strokeWidth="3.5" strokeLinecap="round" />
+            {/* Left leaf */}
+            <path d="M129 165 C118 158 108 152 106 144" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            {/* Right leaf */}
+            <path d="M130 148 C141 141 150 136 153 128" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" fill="none" />
+            {/* Grain head */}
+            <ellipse cx="129" cy="109" rx="5" ry="9" fill="#fbbf24" opacity="0.95" />
+            <ellipse cx="124" cy="112" rx="4" ry="7" fill="#f59e0b" opacity="0.9" transform="rotate(-15 124 112)" />
+            <ellipse cx="135" cy="112" rx="4" ry="7" fill="#f59e0b" opacity="0.9" transform="rotate(15 135 112)" />
+            <ellipse cx="127" cy="103" rx="3.5" ry="6" fill="#fcd34d" transform="rotate(-8 127 103)" />
+            <ellipse cx="132" cy="103" rx="3.5" ry="6" fill="#fcd34d" transform="rotate(8 132 103)" />
+          </motion.g>
+
+          {/* Stalk 2 — left */}
+          <motion.g
+            style={{ originX: '100px', originY: '192px' }}
+            animate={{ rotate: [-4, 2.5, -4] }}
+            transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+          >
+            <path d="M100 192 C99 174 97 158 100 128" stroke="#65a30d" strokeWidth="3" strokeLinecap="round" />
+            <path d="M99 170 C90 162 82 155 80 148" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" fill="none" />
+            <path d="M100 152 C109 145 116 140 118 133" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" fill="none" />
+            <ellipse cx="99" cy="122" rx="4" ry="8" fill="#fbbf24" opacity="0.9" />
+            <ellipse cx="94" cy="125" rx="3.5" ry="6" fill="#f59e0b" transform="rotate(-15 94 125)" />
+            <ellipse cx="104" cy="125" rx="3.5" ry="6" fill="#f59e0b" transform="rotate(15 104 125)" />
+          </motion.g>
+
+          {/* Stalk 3 — right */}
+          <motion.g
+            style={{ originX: '162px', originY: '192px' }}
+            animate={{ rotate: [-2, 4, -2] }}
+            transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut', delay: 1.1 }}
+          >
+            <path d="M162 192 C162 173 163 156 161 125" stroke="#65a30d" strokeWidth="3" strokeLinecap="round" />
+            <path d="M162 168 C172 161 179 153 181 146" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" fill="none" />
+            <path d="M161 150 C151 143 144 138 142 131" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" fill="none" />
+            <ellipse cx="161" cy="119" rx="4" ry="8" fill="#fbbf24" opacity="0.9" />
+            <ellipse cx="156" cy="122" rx="3.5" ry="6" fill="#f59e0b" transform="rotate(-15 156 122)" />
+            <ellipse cx="166" cy="122" rx="3.5" ry="6" fill="#f59e0b" transform="rotate(15 166 122)" />
+          </motion.g>
+
+          {/* Stalk 4 — far left, shorter */}
+          <motion.g
+            style={{ originX: '72px', originY: '194px' }}
+            animate={{ rotate: [-5, 2, -5] }}
+            transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+          >
+            <path d="M72 194 C71 179 70 166 72 142" stroke="#65a30d" strokeWidth="2.5" strokeLinecap="round" />
+            <path d="M71 175 C63 169 57 163 56 156" stroke="#4ade80" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+            <ellipse cx="71" cy="136" rx="3.5" ry="7" fill="#fbbf24" opacity="0.85" />
+            <ellipse cx="67" cy="139" rx="3" ry="5" fill="#f59e0b" transform="rotate(-15 67 139)" />
+            <ellipse cx="75" cy="139" rx="3" ry="5" fill="#f59e0b" transform="rotate(15 75 139)" />
+          </motion.g>
+
+          {/* Stalk 5 — far right, shorter */}
+          <motion.g
+            style={{ originX: '192px', originY: '194px' }}
+            animate={{ rotate: [-2, 5, -2] }}
+            transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
+          >
+            <path d="M192 194 C193 179 194 166 192 142" stroke="#65a30d" strokeWidth="2.5" strokeLinecap="round" />
+            <path d="M192 173 C200 167 206 160 207 153" stroke="#4ade80" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+            <ellipse cx="192" cy="136" rx="3.5" ry="7" fill="#fbbf24" opacity="0.85" />
+            <ellipse cx="188" cy="139" rx="3" ry="5" fill="#f59e0b" transform="rotate(-15 188 139)" />
+            <ellipse cx="196" cy="139" rx="3" ry="5" fill="#f59e0b" transform="rotate(15 196 139)" />
+          </motion.g>
+
+          {/* Floating grain particles */}
+          {[
+            { cx: 58, cy: 100, delay: 0 }, { cx: 200, cy: 88, delay: 0.8 },
+            { cx: 45, cy: 145, delay: 1.4 }, { cx: 215, cy: 140, delay: 0.5 },
+            { cx: 82, cy: 75, delay: 1.9 }, { cx: 178, cy: 70, delay: 1.1 },
+          ].map(({ cx, cy, delay }, i) => (
+            <motion.ellipse
+              key={i}
+              cx={cx} cy={cy} rx="4" ry="7"
+              fill="#fcd34d"
+              opacity={0.7}
+              animate={{ y: [-6, 6, -6], opacity: [0.5, 0.85, 0.5] }}
+              transition={{ duration: 2.4 + i * 0.3, repeat: Infinity, delay, ease: 'easeInOut' }}
+              transform={`rotate(${-20 + i * 15} ${cx} ${cy})`}
+            />
+          ))}
+
+          {/* "No roles" notice board — top */}
+          <rect x="95" y="32" width="70" height="44" rx="6" fill="white" stroke="#d1d5db" strokeWidth="1.5" />
+          <rect x="95" y="32" width="70" height="14" rx="6" fill="#f0fdf4" />
+          <rect x="95" y="40" width="70" height="6" fill="#f0fdf4" />
+          <text x="130" y="43" textAnchor="middle" fill="#16a34a" fontSize="7.5" fontWeight="700" fontFamily="system-ui">POSITIONS</text>
+          <line x1="105" y1="57" x2="155" y2="57" stroke="#e5e7eb" strokeWidth="1.5" />
+          <line x1="105" y1="63" x2="148" y2="63" stroke="#e5e7eb" strokeWidth="1.5" />
+          <line x1="105" y1="69" x2="152" y2="69" stroke="#e5e7eb" strokeWidth="1.5" />
+          {/* X marks through lines */}
+          <text x="130" y="68" textAnchor="middle" fill="#ef4444" fontSize="20" fontWeight="300" opacity="0.2">✕</text>
+          {/* Board post */}
+          <line x1="130" y1="76" x2="130" y2="90" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
+
+        {/* Subtle glow behind illustration */}
+        <div className="absolute inset-0 rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle at 50% 60%, rgba(251,191,36,0.08) 0%, transparent 70%)' }} />
       </div>
 
-      <h3 className="text-2xl font-bold text-green-900 mb-2">No Open Positions Right Now</h3>
-      <p className="text-gray-500 max-w-sm leading-relaxed">
-        Our fields are tended, our mill is humming. Check back soon — new opportunities grow with every season.
+      <h3 className="text-2xl font-bold text-gray-900 mb-2">No Open Positions</h3>
+      <p className="text-gray-500 max-w-xs leading-relaxed text-sm">
+        Our fields are tended and the mill is running. New roles open up with every season — check back soon.
       </p>
-      <p className="mt-4 text-sm text-gray-400">
-        Interested in future roles?{' '}
-        <a href="mailto:ricemill@sameergul.com" className="text-green-600 hover:underline font-medium">
-          Email us directly
-        </a>
-      </p>
+      <a
+        href="mailto:ricemill@sameergul.com"
+        className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-green-700 hover:text-green-900 transition-colors"
+      >
+        Send a general application →
+      </a>
     </motion.div>
   );
 }
