@@ -58,12 +58,22 @@ import BlogPostPage from './pages/shop/BlogPostPage';
 import WholesalePage from './pages/shop/WholesalePage';
 import NotFoundPage from './pages/NotFoundPage';
 
-// Scrolls to top on every route change
 function ScrollToTop() {
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
-  }, [pathname]);
+    if (hash) {
+      // Let the page render first, then scroll to the element
+      const id = hash.slice(1);
+      const attempt = (tries = 0) => {
+        const el = document.getElementById(id);
+        if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+        if (tries < 8) setTimeout(() => attempt(tries + 1), 80);
+      };
+      attempt();
+    } else {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [pathname, hash]);
   return null;
 }
 
