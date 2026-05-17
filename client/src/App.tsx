@@ -32,6 +32,7 @@ import DashboardMessages from './pages/DashboardMessages';
 import DashboardWholesale from './pages/DashboardWholesale';
 import DashboardLoyalty from './pages/DashboardLoyalty';
 import DashboardChat from './pages/DashboardChat';
+import SupplierPortal from './pages/supplier/SupplierPortal';
 
 // Public shop pages
 import ShopLayout from './pages/shop/ShopLayout';
@@ -135,6 +136,13 @@ function AppRoutes() {
           <Route path="users" element={<ProtectedRoute roles={['admin']}><Users /></ProtectedRoute>} />
           <Route path="chat" element={<ProtectedRoute roles={['admin', 'staff']}><DashboardChat /></ProtectedRoute>} />
         </Route>
+
+        {/* ─── SUPPLIER PORTAL ─────────────────────────────────────── */}
+        <Route path="/supplier" element={
+          <ProtectedRoute roles={['supplier']}>
+            <SupplierPortal />
+          </ProtectedRoute>
+        } />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

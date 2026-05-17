@@ -136,7 +136,7 @@ export default function DashboardChat() {
     conv.messages?.[0]?.message || 'No messages yet';
 
   return (
-    <PageTransition>
+    <>
     <div className="flex h-[calc(100vh-88px)] -m-6 overflow-hidden">
       {/* ── LEFT PANEL: Conversation List ─────────────────────────────────────── */}
       <div className="w-80 flex-shrink-0 bg-white border-r border-gray-100 flex flex-col">
@@ -355,6 +355,6 @@ export default function DashboardChat() {
         )}
       </div>
     </div>
-    </PageTransition>
+    </>
   );
 }

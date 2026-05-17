@@ -55,6 +55,9 @@ export default function Layout() {
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
+  // Supplier role has its own portal layout — never use admin sidebar
+  if (user?.role === 'supplier') return null;
+
   type NavLinkItem = { to: string; icon: JSX.Element; label: string; show: boolean; badge?: number };
   const links: NavLinkItem[] = [
     { to: '/dashboard', icon: <LayoutDashboard size={18} />, label: t('nav.dashboard'), show: true },

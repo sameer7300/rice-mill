@@ -1,13 +1,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../api';
 import toast from 'react-hot-toast';
-import { MessageCircle, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import { MessageCircle, RefreshCw, Eye, EyeOff, Zap } from 'lucide-react';
 import PageHeader, { ActionButton } from '../components/ui/PageHeader';
 import Pagination from '../components/ui/Pagination';
 import { TableSkeleton } from '../components/ui/Skeleton';
 import Modal from '../components/ui/Modal';
 import { formatDate } from '../utils/export';
 import PageTransition from '../components/PageTransition';
+import DashboardChat from './DashboardChat';
 
 const LIMIT = 20;
 const SUBJECT_COLOR: Record<string, string> = {
@@ -19,6 +20,7 @@ const SUBJECT_COLOR: Record<string, string> = {
 };
 
 export default function DashboardMessages() {
+  const [activeTab, setActiveTab] = useState<'contacts' | 'chats'>('contacts');
   const [messages, setMessages] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
@@ -58,8 +60,24 @@ export default function DashboardMessages() {
   return (
     <PageTransition>
     <div className="space-y-5">
+      {/* Tab switcher */}
+      <div className="flex gap-1 border-b border-gray-200">
+        <button onClick={() => setActiveTab('contacts')}
+          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'contacts' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>
+          <MessageCircle size={15} /> Contact Forms
+          {unreadCount > 0 && <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">{unreadCount}</span>}
+        </button>
+        <button onClick={() => setActiveTab('chats')}
+          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'chats' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>
+          <Zap size={15} /> Live Chats
+        </button>
+      </div>
+
+      {activeTab === 'chats' && <DashboardChat />}
+
+      {activeTab === 'contacts' && <>
       <PageHeader
-        title={`Messages 💬 ${unreadCount > 0 ? `(${unreadCount} unread)` : ''}`}
+        title={`Contact Forms ${unreadCount > 0 ? `(${unreadCount} unread)` : ''}`}
         subtitle="Contact form submissions from customers"
         actions={
           <>
@@ -149,6 +167,7 @@ export default function DashboardMessages() {
           </div>
         </Modal>
       )}
+      </>}
     </div>
     </PageTransition>
   );

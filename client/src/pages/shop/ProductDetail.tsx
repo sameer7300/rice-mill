@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ShoppingCart, Star, ArrowLeft, Wheat, Shield, Truck, Award, ChevronRight, Heart, ThumbsUp, Flag, Bell } from 'lucide-react';
+import { ShoppingCart, Star, ArrowLeft, Wheat, Shield, Truck, Award, ChevronRight, Heart, ThumbsUp, Flag, Bell, MessageCircle } from 'lucide-react';
+import ChatModal from '../../components/chat/ChatModal';
 import { Helmet } from 'react-helmet-async';
 import api from '../../api';
 import { useCart } from '../../contexts/CartContext';
@@ -49,6 +50,7 @@ export default function ProductDetail() {
   const [alertEmail, setAlertEmail]   = useState('');
   const [alertSent, setAlertSent]     = useState(false);
   const [recentlyViewed, setRV]       = useState<any[]>([]);
+  const [chatOpen, setChatOpen]       = useState(false);
 
   const loadReviews = async () => {
     const r = await api.get(`/reviews/${id}`).catch(() => ({ data: { reviews: [], avgRating: 0, totalCount: 0, breakdown: [] } }));
@@ -243,6 +245,22 @@ export default function ProductDetail() {
               <Heart size={18} className={favorited ? 'fill-red-500' : ''} />
             </button>
           </div>
+
+          {/* Ask about product */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={fastTween}
+            className="border border-gray-200 rounded-xl p-4 bg-gray-50 flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <MessageCircle size={20} className="text-green-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-gray-900 text-sm">Have a question about this product?</p>
+              <p className="text-xs text-gray-500">Usually replies within 1 hour</p>
+            </div>
+            <button onClick={() => setChatOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2 border-2 border-green-600 text-green-700 hover:bg-green-600 hover:text-white rounded-xl text-sm font-semibold transition-colors flex-shrink-0">
+              Ask Us →
+            </button>
+          </motion.div>
 
           {/* Stock Alert — show when out of stock */}
           {!product.inStock && (
@@ -535,6 +553,13 @@ export default function ProductDetail() {
         </div>
       )}
     </div>
+    <ChatModal
+      isOpen={chatOpen}
+      onClose={() => setChatOpen(false)}
+      contextType="product"
+      contextRef={product?.id}
+      contextLabel={product?.name}
+    />
     </PageTransition>
   );
 }

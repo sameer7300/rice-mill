@@ -1,6 +1,6 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
-const { auth, requireRole } = require('../middleware/auth');
+const { auth, requireRole, denySupplier } = require('../middleware/auth');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -9,7 +9,7 @@ const LOW_STOCK_THRESHOLD = 500; // kg
 
 // ─── PADDY STOCK ─────────────────────────────────────────────
 
-router.get('/paddy', auth, async (req, res) => {
+router.get('/paddy', auth, denySupplier, async (req, res) => {
   try {
     const { q, grade, page = 1, limit = 20 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -69,7 +69,7 @@ router.put('/paddy/:id', auth, requireRole('admin', 'staff'), async (req, res) =
 
 // ─── RICE STOCK ───────────────────────────────────────────────
 
-router.get('/rice', auth, async (req, res) => {
+router.get('/rice', auth, denySupplier, async (req, res) => {
   try {
     const { q, grade, page = 1, limit = 20 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -118,7 +118,7 @@ router.put('/rice/:id', auth, requireRole('admin', 'staff'), async (req, res) =>
 
 // ─── SUMMARY & ALERTS ────────────────────────────────────────
 
-router.get('/summary', auth, async (req, res) => {
+router.get('/summary', auth, denySupplier, async (req, res) => {
   try {
     const [paddy, rice, lowPaddy, lowRice] = await Promise.all([
       prisma.paddyStock.aggregate({ _sum: { quantityKg: true }, _count: true }),

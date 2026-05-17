@@ -57,10 +57,14 @@ model Supplier {
   address       String?
   contactPerson String?
   phone         String?
+  bankName      String?
+  bankAccount   String?    // stored masked: ****{last4}
+  bankTitle     String?
   createdAt     DateTime   @default(now())
 
-  purchases     Purchase[]
-  paddyStock    PaddyStock[]
+  purchases       Purchase[]
+  paddyStock      PaddyStock[]
+  deliveryNotices DeliveryNotice[]
 }
 
 model Customer {
@@ -483,6 +487,23 @@ model StockAlert {
   isSent    Boolean  @default(false)
   createdAt DateTime @default(now())
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+// ─── SUPPLIER DELIVERY NOTICES ────────────────────────────────────────────────
+
+model DeliveryNotice {
+  id            String   @id @default(cuid())
+  supplierId    String
+  variety       String
+  estimatedKg   Float
+  estimatedDate DateTime
+  qualityGrade  String   @default("A") // A|B|C
+  notes         String?
+  status        String   @default("pending") // pending|confirmed|cancelled|completed
+  adminNote     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  supplier      Supplier @relation(fields: [supplierId], references: [id])
 }
 
 // ─── WHOLESALE ────────────────────────────────────────────────────────────────

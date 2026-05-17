@@ -21,4 +21,15 @@ function requireRole(...roles) {
   };
 }
 
-module.exports = { auth, requireRole };
+function denySupplier(req, res, next) {
+  if (req.user?.role === 'supplier') {
+    return res.status(403).json({
+      success: false,
+      error: 'Access denied. Suppliers do not have access to this resource.',
+      code: 'SUPPLIER_NO_ACCESS',
+    });
+  }
+  next();
+}
+
+module.exports = { auth, requireRole, denySupplier };

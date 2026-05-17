@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import api from '../api';
 import toast from 'react-hot-toast';
-import { Truck, Eye, Plus, RefreshCw, Download } from 'lucide-react';
+import { Truck, Eye, Plus, RefreshCw, Download, Package, CheckCircle2, XCircle } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import Pagination from '../components/ui/Pagination';
 import SearchBar from '../components/ui/SearchBar';
@@ -24,6 +24,8 @@ export default function Suppliers() {
   const [loading, setLoading] = useState(true);
   const [viewSupplier, setViewSupplier] = useState<any>(null);
   const [showPurchase, setShowPurchase] = useState<any>(null);
+  const [deliveryNotices, setDeliveryNotices] = useState<any[]>([]);
+  const [noticesLoading, setNoticesLoading] = useState(false);
   const [purchaseForm, setPurchaseForm] = useState({ variety: '', quantityKg: '', pricePerKg: '', qualityGrade: 'A', paidAmount: '', notes: '' });
 
   const fetchData = useCallback(async () => {
@@ -46,6 +48,20 @@ export default function Suppliers() {
   const viewDetail = async (s: any) => {
     const { data } = await api.get(`/suppliers/${s.id}`);
     setViewSupplier(data);
+    // Load delivery notices for this supplier
+    setNoticesLoading(true);
+    api.get(`/supplier-portal/admin/delivery-notices?supplierId=${s.id}`)
+      .then(r => setDeliveryNotices(r.data.data || []))
+      .catch(() => setDeliveryNotices([]))
+      .finally(() => setNoticesLoading(false));
+  };
+
+  const updateNoticeStatus = async (noticeId: string, status: string) => {
+    try {
+      await api.patch(`/supplier-portal/admin/delivery-notices/${noticeId}`, { status });
+      setDeliveryNotices(prev => prev.map(n => n.id === noticeId ? { ...n, status } : n));
+      toast.success(`Notice ${status}`);
+    } catch { toast.error('Failed to update notice'); }
   };
 
   const submitPurchase = async (e: React.FormEvent) => {
@@ -182,6 +198,46 @@ export default function Suppliers() {
                   </div>
                 ))}
                 {!viewSupplier.purchases?.length && <p className="text-center text-gray-400 py-6 text-sm">No purchases yet</p>}
+              </div>
+            </div>
+
+            {/* Delivery notices section */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-2">
+                <Package size={13} /> Delivery Notices
+                {noticesLoading && <span className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />}
+              </p>
+              {deliveryNotices.length === 0 && !noticesLoading && (
+                <p className="text-center text-gray-400 py-4 text-sm">No delivery notices</p>
+              )}
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {deliveryNotices.map(n => (
+                  <div key={n.id} className="flex items-center gap-2 p-2.5 bg-gray-50 rounded-xl text-sm">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0 ${
+                      n.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                      n.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                      n.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+                    }`}>{n.status}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{n.variety} • {(n.estimatedKg || 0).toLocaleString()} kg</p>
+                      <p className="text-xs text-gray-400">{formatDate(n.estimatedDate)} • Grade {n.qualityGrade}</p>
+                    </div>
+                    {n.status === 'pending' && (
+                      <div className="flex gap-1 flex-shrink-0">
+                        <button onClick={() => updateNoticeStatus(n.id, 'confirmed')}
+                          title="Confirm"
+                          className="p-1 rounded-lg text-green-600 hover:bg-green-100 transition-colors">
+                          <CheckCircle2 size={15} />
+                        </button>
+                        <button onClick={() => updateNoticeStatus(n.id, 'cancelled')}
+                          title="Cancel"
+                          className="p-1 rounded-lg text-red-500 hover:bg-red-100 transition-colors">
+                          <XCircle size={15} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
 

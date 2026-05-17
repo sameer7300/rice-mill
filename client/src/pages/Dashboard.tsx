@@ -17,13 +17,15 @@ import {
   Factory, Clock, AlertTriangle, CheckCircle2, ArrowRight, Users, Truck,
   Heart, Star, User, Shield, ChevronDown, ChevronUp, Languages, Trash2,
   MapPin, CreditCard, Gift, Plus, QrCode, Smartphone, Download, Copy,
-  Award, Trophy, Zap, Home, Building2, Landmark, Edit3, RefreshCw, Eye, EyeOff
+  Award, Trophy, Zap, Home, Building2, Landmark, Edit3, RefreshCw, Eye, EyeOff,
+  MessageCircle
 } from 'lucide-react';
+import ChatModal from '../components/chat/ChatModal';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Legend, AreaChart, Area, Line
 } from 'recharts';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, Navigate } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
 
 export default function Dashboard() {
@@ -31,6 +33,9 @@ export default function Dashboard() {
   const { user, isAdmin, isStaff, isCustomer } = useAuth();
   const navigate = useNavigate();
   const [data, setData] = useState<any>({});
+
+  // Suppliers have their own portal — never show admin dashboard to them
+  if (user?.role === 'supplier') return <Navigate to="/supplier" replace />;
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -327,6 +332,7 @@ function CustomerDashboard({ user }: { user: any }) {
   const [loadingOrders, setLO]    = useState(true);
   const [orderFilter, setOF]      = useState('All');
   const [expandedOrder, setEO]    = useState<string | null>(null);
+  const [chatOrder, setChatOrder] = useState<any>(null);
   const [favorites, setFavs]      = useState<any[]>([]);
   const [loadingFavs, setLF]      = useState(false);
   const [reviews, setReviews]     = useState<any[]>([]);
@@ -481,6 +487,11 @@ function CustomerDashboard({ user }: { user: any }) {
                     className="flex items-center gap-1.5 text-xs bg-gray-50 text-gray-600 hover:bg-gray-100 px-2.5 py-1.5 rounded-lg font-medium transition-colors">
                     <Package size={12} /> Track
                   </Link>
+                  <button onClick={() => setChatOrder(o)}
+                    title="Chat about this order"
+                    className="flex items-center gap-1.5 text-xs bg-green-50 text-green-700 hover:bg-green-100 px-2.5 py-1.5 rounded-lg font-medium transition-colors">
+                    <MessageCircle size={12} /> Chat
+                  </button>
                   <button onClick={() => setEO(expandedOrder === o.id ? null : o.id)}
                     className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg">
                     {expandedOrder === o.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -736,6 +747,16 @@ function CustomerDashboard({ user }: { user: any }) {
         </div>
       )}
     </div>
+    {chatOrder && (
+      <ChatModal
+        isOpen={!!chatOrder}
+        onClose={() => setChatOrder(null)}
+        contextType="order"
+        contextRef={chatOrder.id}
+        contextLabel={chatOrder.orderNumber}
+        initialMessage={`Hi, I have a question about order ${chatOrder.orderNumber}`}
+      />
+    )}
     </PageTransition>
   );
 }

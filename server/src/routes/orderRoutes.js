@@ -1,6 +1,6 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
-const { auth, requireRole } = require('../middleware/auth');
+const { auth, requireRole, denySupplier } = require('../middleware/auth');
 const wa = require('../lib/whatsapp');
 const mailer = require('../lib/mailer');
 
@@ -13,7 +13,7 @@ function generateOrderNumber() {
 }
 
 // Get orders with search, filter, pagination
-router.get('/', auth, async (req, res) => {
+router.get('/', auth, denySupplier, async (req, res) => {
   try {
     const { q, status, paymentStatus, page = 1, limit = 20, dateFrom, dateTo } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -59,7 +59,7 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', auth, denySupplier, async (req, res) => {
   try {
     const order = await prisma.order.findUnique({
       where: { id: req.params.id },

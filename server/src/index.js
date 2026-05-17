@@ -32,6 +32,7 @@ const stockAlertRoutes = require('./routes/stockAlertRoutes');
 const recentlyViewedRoutes = require('./routes/recentlyViewedRoutes');
 const sitemapRoutes = require('./routes/sitemapRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const supplierPortalRoutes = require('./routes/supplierPortalRoutes');
 const { setupSocket } = require('./socket');
 
 const app = express();
@@ -68,6 +69,7 @@ app.use('/api/wholesale', wholesaleRoutes);
 app.use('/api/stock-alerts', stockAlertRoutes);
 app.use('/api/products', recentlyViewedRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/supplier-portal', supplierPortalRoutes);
 app.use('/', sitemapRoutes);
 
 app.get('/api/health', (_, res) => res.json({ success: true, version: '3.1', app: 'Al-Noor Rice Mills' }));
