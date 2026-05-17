@@ -53,6 +53,9 @@ interface ChatContextType {
   // Admin
   resolveConversation: (conversationId: string) => void;
   reopenConversation: (conversationId: string) => void;
+  // Send to a specific conversation (used by admin chat + ChatModal)
+  sendMessageTo: (conversationId: string, text: string) => void;
+  sendTypingTo: (conversationId: string, isTyping: boolean) => void;
   // Admin conversation list updates
   onConversationUpdate: (cb: (data: any) => void) => () => void;
   // Admin unread badge
@@ -172,6 +175,18 @@ export function ChatProvider({ children, token }: { children: ReactNode; token?:
     socketRef.current?.emit(event, { conversationId: conversation.id });
   }, [conversation]);
 
+  // ── Send to any conversation (admin / modal use) ──────────────────────────
+  const sendMessageTo = useCallback((conversationId: string, text: string) => {
+    if (!conversationId || !text.trim()) return;
+    socketRef.current?.emit('send_message', { conversationId, message: text.trim() });
+    socketRef.current?.emit('typing_stop', { conversationId });
+  }, []);
+
+  const sendTypingTo = useCallback((conversationId: string, isTyping: boolean) => {
+    if (!conversationId) return;
+    socketRef.current?.emit(isTyping ? 'typing_start' : 'typing_stop', { conversationId });
+  }, []);
+
   // ── Admin actions ─────────────────────────────────────────────────────────
   const resolveConversation = useCallback((conversationId: string) => {
     socketRef.current?.emit('resolve_conversation', { conversationId });
@@ -212,6 +227,8 @@ export function ChatProvider({ children, token }: { children: ReactNode; token?:
       joinConversation,
       resolveConversation,
       reopenConversation,
+      sendMessageTo,
+      sendTypingTo,
       onConversationUpdate,
       adminUnreadCount,
       clearAdminUnread,

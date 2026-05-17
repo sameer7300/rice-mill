@@ -32,7 +32,7 @@ export default function ChatModal({
   onClose,
 }: ChatModalProps) {
   const { user } = useAuth();
-  const { sendMessage } = useChat();
+  const { sendMessageTo } = useChat();
 
   const [convId, setConvId] = useState<string | null>(initialConvId || null);
   const [messages, setMessages] = useState<any[]>([]);
@@ -95,8 +95,7 @@ export default function ChatModal({
   };
 
   const sendFirstMessage = async (id: string, text: string) => {
-    // Use socket if available, else REST fallback — just optimistically add
-    sendMessage(text);
+    sendMessageTo(id, text);
     setMessages(prev => [...prev, {
       id: Date.now().toString(),
       message: text,
@@ -112,7 +111,7 @@ export default function ChatModal({
     setInput('');
     setSending(true);
     try {
-      sendMessage(text);
+      sendMessageTo(convId, text);
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         message: text,

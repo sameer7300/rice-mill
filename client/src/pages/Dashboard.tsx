@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useCallback } from 'react';
+﻿import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LangContext';
@@ -18,9 +18,10 @@ import {
   Heart, Star, User, Shield, ChevronDown, ChevronUp, Languages, Trash2,
   MapPin, CreditCard, Gift, Plus, QrCode, Smartphone, Download, Copy,
   Award, Trophy, Zap, Home, Building2, Landmark, Edit3, RefreshCw, Eye, EyeOff,
-  MessageCircle
+  MessageCircle, Send
 } from 'lucide-react';
 import ChatModal from '../components/chat/ChatModal';
+import { useChat } from '../contexts/ChatContext';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Legend, AreaChart, Area, Line
@@ -296,6 +297,7 @@ const CUST_TABS = [
   { id: 'orders',    label: 'My Orders',  icon: <ShoppingCart size={15} /> },
   { id: 'favorites', label: 'Favorites',  icon: <Heart size={15} /> },
   { id: 'reviews',   label: 'Reviews',    icon: <Star size={15} /> },
+  { id: 'messages',  label: 'Messages',   icon: <MessageCircle size={15} /> },
   { id: 'addresses', label: 'Addresses',  icon: <MapPin size={15} /> },
   { id: 'payment',   label: 'Payment',    icon: <CreditCard size={15} /> },
   { id: 'rewards',   label: 'Rewards',    icon: <Gift size={15} /> },
@@ -330,6 +332,15 @@ function CustomerDashboard({ user }: { user: any }) {
   const [orderFilter, setOF]      = useState('All');
   const [expandedOrder, setEO]    = useState<string | null>(null);
   const [chatOrder, setChatOrder] = useState<any>(null);
+
+  // Messages tab state
+  const [myConvId, setMyConvId]     = useState<string | null>(null);
+  const [myMessages, setMyMessages] = useState<any[]>([]);
+  const [chatInput, setChatInput]   = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const myMsgEnd = useRef<HTMLDivElement>(null);
+  const { sendMessageTo } = useChat();
+
   const [favorites, setFavs]      = useState<any[]>([]);
   const [loadingFavs, setLF]      = useState(false);
   const [reviews, setReviews]     = useState<any[]>([]);
@@ -358,7 +369,50 @@ function CustomerDashboard({ user }: { user: any }) {
         address: r.data.address || '', businessName: r.data.customer?.businessName || ''
       })).catch(() => {});
     }
+    if (tab === 'messages' && !myConvId) {
+      setChatLoading(true);
+      const customerId = (user as any)?.customer?.id;
+      const q = customerId ? `customerId=${customerId}` : '';
+      api.get(`/chat/my${q ? '?' + q : ''}`)
+        .then(r => {
+          if (r.data.data) {
+            setMyConvId(r.data.data.id);
+            return api.get(`/chat/${r.data.data.id}/messages`);
+          }
+        })
+        .then(r => { if (r) setMyMessages(r.data.data || []); })
+        .catch(() => {})
+        .finally(() => setChatLoading(false));
+    }
   }, [tab]);
+
+  // Scroll to bottom of messages when they change
+  useEffect(() => { myMsgEnd.current?.scrollIntoView({ behavior: 'smooth' }); }, [myMessages]);
+
+  // Poll for new messages every 5s when on messages tab
+  useEffect(() => {
+    if (tab !== 'messages' || !myConvId) return;
+    const interval = setInterval(() => {
+      api.get(`/chat/${myConvId}/messages`)
+        .then(r => setMyMessages(r.data.data || []))
+        .catch(() => {});
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [tab, myConvId]);
+
+  const handleChatSend = () => {
+    if (!chatInput.trim() || !myConvId) return;
+    const text = chatInput.trim();
+    setChatInput('');
+    sendMessageTo(myConvId, text);
+    setMyMessages(prev => [...prev, {
+      id: Date.now().toString(),
+      message: text,
+      senderRole: 'customer',
+      senderName: user?.name || 'You',
+      createdAt: new Date().toISOString(),
+    }]);
+  };
 
   const filteredOrders = orders.filter(o =>
     orderFilter === 'All' ? true : o.status.toLowerCase() === orderFilter.toLowerCase()
@@ -650,6 +704,84 @@ function CustomerDashboard({ user }: { user: any }) {
                   {opt.label}
                 </button>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MESSAGES ─────────────────────────────────────────────────── */}
+      {tab === 'messages' && (
+        <div className="max-w-2xl">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col" style={{ height: 480 }}>
+            {/* Header */}
+            <div className="bg-green-700 px-5 py-4 flex items-center gap-3">
+              <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Wheat size={16} className="text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-white text-sm">Al-Noor Rice Mills Support</p>
+                <p className="text-green-200 text-xs">We reply within 1 hour</p>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50">
+              {chatLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <span className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : myMessages.length === 0 && !myConvId ? (
+                <div className="text-center py-12">
+                  <MessageCircle size={40} className="mx-auto mb-3 text-gray-300" />
+                  <p className="font-medium text-gray-600">No conversations yet</p>
+                  <p className="text-sm text-gray-400 mt-1">Start a chat from any product page or order</p>
+                </div>
+              ) : myMessages.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  <p className="text-sm">Send a message to start the conversation</p>
+                </div>
+              ) : (
+                myMessages.map((msg: any) => {
+                  const isOwn = msg.senderRole === 'customer' || msg.senderRole === 'guest';
+                  return (
+                    <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'} gap-2`}>
+                      {!isOwn && (
+                        <div className="w-7 h-7 bg-green-700 rounded-full flex items-center justify-center flex-shrink-0 mt-auto">
+                          <Wheat size={12} className="text-white" />
+                        </div>
+                      )}
+                      <div className="max-w-[78%]">
+                        <div className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                          isOwn ? 'bg-green-700 text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm shadow-sm border border-gray-100'
+                        }`}>
+                          {msg.message || msg.content}
+                        </div>
+                        <p className={`text-[10px] text-gray-400 mt-0.5 ${isOwn ? 'text-right' : 'text-left'}`}>
+                          {new Date(msg.createdAt).toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={myMsgEnd} />
+            </div>
+
+            {/* Input */}
+            <div className="px-4 py-3 border-t border-gray-100 bg-white flex gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleChatSend(); } }}
+                placeholder={myConvId ? 'Type a message...' : 'Start a chat from a product or order page first'}
+                disabled={!myConvId}
+                className="flex-1 border border-gray-200 focus:border-green-500 rounded-xl px-3.5 py-2.5 text-sm outline-none transition-colors disabled:bg-gray-50 disabled:text-gray-400"
+              />
+              <button onClick={handleChatSend} disabled={!chatInput.trim() || !myConvId}
+                className="w-10 h-10 bg-green-700 hover:bg-green-800 disabled:opacity-40 text-white rounded-xl flex items-center justify-center transition-colors flex-shrink-0">
+                <Send size={15} />
+              </button>
             </div>
           </div>
         </div>

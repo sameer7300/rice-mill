@@ -19,7 +19,7 @@ function formatTime(dateStr: string) {
 const STATUS_COLORS: Record<string, string> = { guest: '#6b7280', customer: '#16a34a', admin: '#7c3aed', staff: '#2563eb' };
 
 export default function DashboardChat() {
-  const { messages, typingInfo, sendMessage, sendTyping, loadMessages, joinConversation, resolveConversation, reopenConversation, onConversationUpdate, clearAdminUnread } = useChat();
+  const { messages, typingInfo, sendMessageTo, sendTypingTo, loadMessages, joinConversation, resolveConversation, reopenConversation, onConversationUpdate, clearAdminUnread } = useChat();
 
   const [conversations, setConvs]       = useState<any[]>([]);
   const [active, setActive]             = useState<any>(null);
@@ -91,18 +91,18 @@ export default function DashboardChat() {
   const handleSend = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!inputMsg.trim() || !active) return;
-    sendMessage(inputMsg);
+    sendMessageTo(active.id, inputMsg);
     setInputMsg('');
-    sendTyping(false);
+    sendTypingTo(active.id, false);
     if (typingTimer.current) clearTimeout(typingTimer.current);
     setITL(false);
   };
 
   const handleTyping = (v: string) => {
     setInputMsg(v);
-    if (!isTypingLocal) { sendTyping(true); setITL(true); }
+    if (!isTypingLocal) { sendTypingTo(active.id, true); setITL(true); }
     if (typingTimer.current) clearTimeout(typingTimer.current);
-    typingTimer.current = setTimeout(() => { sendTyping(false); setITL(false); }, 2000);
+    typingTimer.current = setTimeout(() => { sendTypingTo(active.id, false); setITL(false); }, 2000);
   };
 
   const handleResolve = () => {
