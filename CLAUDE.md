@@ -743,4 +743,113 @@ passwordResetExpires DateTime?   — 1 hour TTL
 
 ---
 
+## Supplier Portal
+
+```
+Route:    /supplier  (role=supplier ONLY — redirected from /dashboard)
+Layout:   Own standalone layout — NO admin sidebar, NO Layout.tsx
+File:     client/src/pages/supplier/SupplierPortal.tsx
+Tabs:     Dashboard | My Deliveries | Payments | Profile | Messages
+```
+
+### Access Control
+- `denySupplier` middleware in `server/src/middleware/auth.js`
+- Applied to: `GET /api/orders`, `GET /api/inventory/paddy|rice|summary`
+- Finance, analytics, customers, ecommerce, agents already block via `requireRole('admin','staff')`
+- Dashboard.tsx: `if (user.role === 'supplier') return <Navigate to="/supplier" />`
+- Layout.tsx: `if (user?.role === 'supplier') return null` (no admin sidebar)
+- Suppliers ARE allowed: `/api/auth/*`, `/api/supplier-portal/*`, `/api/chat/*`
+
+### Supplier Portal API — `/api/supplier-portal/*`
+```
+GET  /profile              Supplier's own profile + stats summary
+PUT  /profile              Update phone, address, contactPerson, bankName, bankAccount, bankTitle
+GET  /stats                totalKgSupplied, totalEarned, totalPaid, outstanding, thisMonthKg/Amount
+GET  /purchases            Paginated list, ?status=all|paid|partial|unpaid
+GET  /purchases/:id        Single purchase (403 if not owned)
+GET  /varieties            Distinct varieties with totalKg/avgPrice
+POST /delivery-notice      Submit upcoming delivery notice
+GET  /delivery-notices     Own submitted notices list
+GET  /admin/delivery-notices      admin/staff — list notices, ?supplierId
+PATCH /admin/delivery-notices/:id admin/staff — { status, adminNote }
+```
+
+### New Models
+```prisma
+model DeliveryNotice {
+  id supplierId variety estimatedKg estimatedDate qualityGrade(A/B/C)
+  notes status(pending|confirmed|cancelled|completed) adminNote
+}
+// Supplier model additions: bankName bankAccount(masked ****last4) bankTitle
+// deliveryNotices DeliveryNotice[] relation added
+```
+
+### Admin — Supplier Detail Modal (Suppliers.tsx)
+Shows delivery notices section with Confirm/Cancel buttons.
+Calls PATCH `/api/supplier-portal/admin/delivery-notices/:id`
+
+---
+
+## Chat System
+
+### Architecture
+- **Transport:** Socket.IO (server/src/socket.js)
+- **Schema:** `ChatConversation` + `ChatMessage` models in schema.prisma
+- **Server routes:** server/src/routes/chatRoutes.js (`/api/chat/*`)
+- **Client context:** client/src/contexts/ChatContext.tsx (wraps entire app via ChatWrapper in App.tsx)
+- **Admin unread badge:** `adminUnreadCount` + `clearAdminUnread` in ChatContext
+
+### Customer / Public Entry Points
+| Location | Trigger | Context |
+|---|---|---|
+| ShopLayout.tsx | Floating widget bottom-right | general |
+| Dashboard.tsx My Orders | Chat button per order | order + orderNumber |
+| ProductDetail.tsx | "Ask Us" card below Add to Cart | product + productName |
+| OrderSuccess.tsx | Secondary link (if added) | order |
+| TrackOrder.tsx | Conditional prompt (if added) | order |
+
+### Admin Entry Points
+| Location | Trigger |
+|---|---|
+| DashboardMessages.tsx | "Live Chats" tab — embeds DashboardChat |
+| /dashboard/chat | Direct route (admin/staff only) |
+| Layout.tsx sidebar | "Live Chat" link with red unread badge |
+
+### Supplier Entry Point
+`SupplierPortal.tsx` → Messages tab → sends via existing chatRoutes.js `/chat/start`
+
+### Reusable Components
+```
+client/src/components/ChatWidget.tsx      Floating widget (ShopLayout only)
+client/src/components/chat/ChatModal.tsx  Modal for order/product chat
+client/src/pages/DashboardChat.tsx        Full admin 2-panel chat UI
+```
+
+### ChatModal Props
+```tsx
+interface ChatModalProps {
+  conversationId?: string;   // existing conv
+  contextType?: string;      // 'order'|'product'|'general'
+  contextRef?: string;       // orderId or productId
+  contextLabel?: string;     // "ORD-202505-001" or product name
+  initialMessage?: string;   // pre-fills message input
+  isOpen: boolean;
+  onClose: () => void;
+}
+```
+Polls GET /chat/:id/messages every 3s. Sends via ChatContext.sendMessage (socket).
+Guest identify step shown if not logged in.
+
+### Chat Message Color Convention
+- Customer/Guest: left-aligned, gray bubble
+- Admin/Staff: right-aligned, green bubble
+- Supplier: left-aligned, blue bubble (in admin view)
+
+### DashboardMessages.tsx
+Two tabs:
+- "Contact Forms" — existing ContactMessage list from /api/contact/admin
+- "Live Chats" — embeds `<DashboardChat />` (DashboardChat no longer wraps itself in PageTransition)
+
+---
+
 *Last updated: May 2026 · Al-Noor Rice Mills · Batkhela, Malakand, KPK, Pakistan*
