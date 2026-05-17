@@ -167,19 +167,19 @@ export default function ShopLayout() {
                         <div>
                           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Varieties</p>
                           {VARIETIES.map(v => (
-                            <Link key={v} to={`/?variety=${encodeURIComponent(v)}`} onClick={() => setShopMenu(false)}
+                            <Link key={v} to={`/?variety=${encodeURIComponent(v)}#products`} onClick={() => setShopMenu(false)}
                               className="block text-sm text-gray-700 hover:text-green-700 py-1 transition-colors">{v}</Link>
                           ))}
                         </div>
                         <div>
                           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">By Grade</p>
                           {[['A', 'Premium'], ['B', 'Standard'], ['C', 'Economy']].map(([g, l]) => (
-                            <Link key={g} to={`/?grade=${g}`} onClick={() => setShopMenu(false)}
+                            <Link key={g} to={`/?grade=${g}#products`} onClick={() => setShopMenu(false)}
                               className="block text-sm text-gray-700 hover:text-green-700 py-1 transition-colors">{l} (Grade {g})</Link>
                           ))}
                           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 mt-3">Quick Links</p>
-                          <Link to="/" onClick={() => setShopMenu(false)} className="block text-sm text-gray-700 hover:text-green-700 py-1">All Products</Link>
-                          <Link to="/?sort=newest" onClick={() => setShopMenu(false)} className="block text-sm text-gray-700 hover:text-green-700 py-1">New Arrivals</Link>
+                          <Link to="/#products" onClick={() => setShopMenu(false)} className="block text-sm text-gray-700 hover:text-green-700 py-1">All Products</Link>
+                          <Link to="/?sort=newest#products" onClick={() => setShopMenu(false)} className="block text-sm text-gray-700 hover:text-green-700 py-1">New Arrivals</Link>
                           <Link to="/track" onClick={() => setShopMenu(false)} className="block text-sm text-gray-700 hover:text-green-700 py-1">Track Order</Link>
                         </div>
                         <div>
@@ -345,7 +345,7 @@ export default function ShopLayout() {
                   <input type="text" placeholder="Search rice..." value={searchQ} onChange={e => setSearchQ(e.target.value)}
                     className="w-full pl-8 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
                 </div>
-                <Link to="/" className="block py-2.5 px-3 rounded-xl text-gray-700 hover:bg-gray-50 font-medium">🛒 Shop All Products</Link>
+                <Link to="/#products" className="block py-2.5 px-3 rounded-xl text-gray-700 hover:bg-gray-50 font-medium">🛒 Shop All Products</Link>
                 <Link to="/track" className="block py-2.5 px-3 rounded-xl text-gray-700 hover:bg-gray-50">📦 Track Order</Link>
                 <Link to="/about" className="block py-2.5 px-3 rounded-xl text-gray-700 hover:bg-gray-50">About Us</Link>
                 <Link to="/blog" className="block py-2.5 px-3 rounded-xl text-gray-700 hover:bg-gray-50">Blog</Link>

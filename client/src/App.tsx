@@ -1,6 +1,6 @@
 import './i18n';
 import React, { useEffect, useRef, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { HelmetProvider } from 'react-helmet-async';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -60,20 +60,25 @@ import NotFoundPage from './pages/NotFoundPage';
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
+  const navType = useNavigationType();
+
   useEffect(() => {
+    // Back / forward button — let the browser restore the scroll position naturally
+    if (navType === 'POP') return;
+
     if (hash) {
-      // Let the page render first, then scroll to the element
+      // Hash link — scroll to that section (retry until it mounts)
       const id = hash.slice(1);
       const attempt = (tries = 0) => {
         const el = document.getElementById(id);
         if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
-        if (tries < 8) setTimeout(() => attempt(tries + 1), 80);
+        if (tries < 10) setTimeout(() => attempt(tries + 1), 80);
       };
       attempt();
     } else {
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
-  }, [pathname, hash]);
+  }, [pathname, hash, navType]);
   return null;
 }
 
