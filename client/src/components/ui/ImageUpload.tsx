@@ -10,15 +10,10 @@ interface ImageUploadProps {
   hint?: string;
 }
 
-// Prepend API base for local /uploads/ paths so the browser can load them.
+// Vite proxies /uploads → http://localhost:5000/uploads, so relative paths work directly.
 // Full https:// URLs (Unsplash, CDN, etc.) are returned as-is.
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000';
-
 function toDisplayUrl(url: string): string {
-  if (!url) return '';
-  if (url.startsWith('http')) return url;               // already absolute
-  if (url.startsWith('/uploads/')) return `${API_BASE}${url}`; // local upload
-  return url;
+  return url || '';
 }
 
 export default function ImageUpload({ value, onChange, label = 'Image', hint }: ImageUploadProps) {
@@ -40,9 +35,9 @@ export default function ImageUpload({ value, onChange, label = 'Image', hint }: 
     try {
       const form = new FormData();
       form.append('image', file);
-      const res = await api.post('/upload', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      // Do NOT set Content-Type manually — axios detects FormData and sets the correct
+      // multipart/form-data boundary automatically. Setting it manually breaks multer.
+      const res = await api.post('/upload', form);
       // res.data.url is a relative path like '/uploads/uuid.jpg'
       onChange(res.data.url);
       setPreviewUrl(toDisplayUrl(res.data.url));

@@ -184,7 +184,7 @@ export default function ShopLayout() {
                         </div>
                         <div>
                           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">For Business</p>
-                          <Link to="/contact" onClick={() => setShopMenu(false)} className="block text-sm text-gray-700 hover:text-green-700 py-1">Wholesale Inquiry</Link>
+                          <Link to="/wholesale" onClick={() => setShopMenu(false)} className="block text-sm text-gray-700 hover:text-green-700 py-1">Wholesale Inquiry</Link>
                           <Link to="/about" onClick={() => setShopMenu(false)} className="block text-sm text-gray-700 hover:text-green-700 py-1">Our Story</Link>
                           <div className="mt-3 p-3 bg-green-50 rounded-xl">
                             <p className="text-xs font-semibold text-green-800 mb-1">📞 Order by Phone</p>
@@ -377,15 +377,6 @@ export default function ShopLayout() {
 
       {/* ── FOOTER ──────────────────────────────────────────────────────── */}
       <footer>
-        {/* Newsletter bar */}
-        <div className="bg-amber-400">
-          <div className="max-w-4xl mx-auto px-4 py-8 text-center">
-            <h3 className="text-xl font-bold text-green-900 mb-1">🌾 Get Fresh Harvest Alerts</h3>
-            <p className="text-green-800 text-sm mb-4">Be the first to know when new stock arrives + exclusive deals.</p>
-            <NewsletterBar />
-          </div>
-        </div>
-
         {/* Main footer */}
         <div className="bg-green-900 text-gray-300">
           <div className="max-w-6xl mx-auto px-4 py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -443,7 +434,7 @@ export default function ShopLayout() {
               </ul>
               <p className="font-bold text-white mb-3 mt-6 text-sm uppercase tracking-wide">For Business</p>
               <ul className="space-y-2 text-sm">
-                {[['Wholesale Inquiry', '/contact'], ['Bulk Orders (500kg+)', '/contact'], ['Seller / Admin Login', '/login']].map(([l, h]) => (
+                {[['Wholesale Inquiry', '/wholesale'], ['Bulk Orders (500kg+)', '/wholesale'], ['Seller / Admin Login', '/login']].map(([l, h]) => (
                   <li key={l}><Link to={h} className="text-gray-400 hover:text-green-400 transition-colors">{l}</Link></li>
                 ))}
               </ul>

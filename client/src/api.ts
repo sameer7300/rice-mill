@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const api = axios.create({ baseURL: 'http://localhost:5000/api' });
+// Use relative /api so Vite's proxy forwards to Express on port 5000.
+// This also works in production when frontend and backend share the same origin.
+const api = axios.create({ baseURL: '/api' });
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
