@@ -691,13 +691,19 @@ export default function Store() {
           {/* Right visual + quote */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <Reveal>
-              <div style={{ aspectRatio: '4/5', borderRadius: 'var(--radius)', background: 'linear-gradient(155deg, var(--paddy-soft), var(--paddy))', position: 'relative', overflow: 'hidden', display: 'grid', placeItems: 'center' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', padding: '5px 12px', background: 'rgba(0,0,0,0.2)', borderRadius: 999 }}>WAREHOUSE · 25KG SACKS</span>
+              <div style={{ aspectRatio: '4/5', borderRadius: 'var(--radius)', overflow: 'hidden', position: 'relative' }}>
+                <img src="/WAREHOUSE · 25KG SACKS.png" alt="Warehouse 25kg rice sacks"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 50%)' }} />
+                <span style={{ position: 'absolute', bottom: 14, left: 14, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', padding: '5px 12px', background: 'rgba(0,0,0,0.35)', borderRadius: 999, backdropFilter: 'blur(4px)' }}>WAREHOUSE · 25KG SACKS</span>
               </div>
             </Reveal>
             <Reveal delay={120}>
-              <div style={{ aspectRatio: '4/5', borderRadius: 'var(--radius)', background: 'linear-gradient(155deg, var(--paddy), var(--paddy-deep))', position: 'relative', overflow: 'hidden', marginTop: 60, display: 'grid', placeItems: 'center' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', padding: '5px 12px', background: 'rgba(0,0,0,0.2)', borderRadius: 999 }}>LOADING · TCS FREIGHT</span>
+              <div style={{ aspectRatio: '4/5', borderRadius: 'var(--radius)', overflow: 'hidden', position: 'relative', marginTop: 60 }}>
+                <img src="/MILL · COURTYARD · DAWN.png" alt="Mill courtyard at dawn"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 50%)' }} />
+                <span style={{ position: 'absolute', bottom: 14, left: 14, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', padding: '5px 12px', background: 'rgba(0,0,0,0.35)', borderRadius: 999, backdropFilter: 'blur(4px)' }}>MILL · COURTYARD · DAWN</span>
               </div>
             </Reveal>
             {testimonials.length > 0 && (
