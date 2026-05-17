@@ -1,19 +1,24 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, X, Loader2, Link } from 'lucide-react';
 import api from '../../api';
 
 interface ImageUploadProps {
-  value: string;                    // current imageUrl (relative /uploads/... or full https://...)
-  onChange: (url: string) => void;  // called with the new URL on success
+  value: string;                    // stored URL — relative '/uploads/...' or full 'https://...'
+  onChange: (url: string) => void;  // called with the new relative/absolute URL
   label?: string;
   hint?: string;
 }
 
-// The server always returns full absolute URLs for uploads.
-// For externally-pasted URLs this is also already absolute.
-function toDisplaySrc(url: string): string {
-  return url || '';
+// Prepend API base for local /uploads/ paths so the browser can load them.
+// Full https:// URLs (Unsplash, CDN, etc.) are returned as-is.
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000';
+
+function toDisplayUrl(url: string): string {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;               // already absolute
+  if (url.startsWith('/uploads/')) return `${API_BASE}${url}`; // local upload
+  return url;
 }
 
 export default function ImageUpload({ value, onChange, label = 'Image', hint }: ImageUploadProps) {
@@ -21,7 +26,13 @@ export default function ImageUpload({ value, onChange, label = 'Image', hint }: 
   const [error, setError] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [urlInput, setUrlInput] = useState('');
+  const [previewUrl, setPreviewUrl] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync preview whenever the stored value changes (e.g. when editing an existing product)
+  useEffect(() => {
+    setPreviewUrl(toDisplayUrl(value));
+  }, [value]);
 
   const handleFile = async (file: File) => {
     setError('');
@@ -32,7 +43,9 @@ export default function ImageUpload({ value, onChange, label = 'Image', hint }: 
       const res = await api.post('/upload', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+      // res.data.url is a relative path like '/uploads/uuid.jpg'
       onChange(res.data.url);
+      setPreviewUrl(toDisplayUrl(res.data.url));
     } catch (err: any) {
       setError(err.response?.data?.error || 'Upload failed. Try again.');
     } finally {
@@ -55,12 +68,16 @@ export default function ImageUpload({ value, onChange, label = 'Image', hint }: 
   const handleApplyUrl = () => {
     if (urlInput.trim()) {
       onChange(urlInput.trim());
+      setPreviewUrl(toDisplayUrl(urlInput.trim()));
       setUrlInput('');
       setShowUrlInput(false);
     }
   };
 
-  const displaySrc = toDisplaySrc(value);
+  const handleClear = () => {
+    onChange('');
+    setPreviewUrl('');
+  };
 
   return (
     <div className="space-y-2">
@@ -72,7 +89,7 @@ export default function ImageUpload({ value, onChange, label = 'Image', hint }: 
         onDrop={handleDrop}
         onClick={() => !uploading && inputRef.current?.click()}
         className={`relative rounded-xl border-2 border-dashed transition-colors cursor-pointer overflow-hidden
-          ${uploading ? 'border-green-400 bg-green-50' : value ? 'border-gray-200 bg-gray-50' : 'border-gray-300 bg-gray-50 hover:border-green-400 hover:bg-green-50/40'}`}
+          ${uploading ? 'border-green-400 bg-green-50' : previewUrl ? 'border-gray-200 bg-gray-50' : 'border-gray-300 bg-gray-50 hover:border-green-400 hover:bg-green-50/40'}`}
         style={{ minHeight: 120 }}
       >
         <input
@@ -88,32 +105,32 @@ export default function ImageUpload({ value, onChange, label = 'Image', hint }: 
             <Loader2 size={24} className="text-green-600 animate-spin" />
             <p className="text-xs text-green-700 font-medium">Uploading…</p>
           </div>
-        ) : displaySrc ? (
-          /* Image preview */
+        ) : previewUrl ? (
           <div className="relative group">
             <img
-              src={displaySrc}
+              src={previewUrl}
               alt="preview"
               className="w-full object-cover rounded-xl"
               style={{ maxHeight: 200 }}
-              onError={e => { (e.target as HTMLImageElement).src = ''; }}
+              onError={(e) => {
+                console.error('[ImageUpload] Failed to load preview:', previewUrl);
+                setPreviewUrl('');
+              }}
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all rounded-xl flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
               <span className="text-white text-xs font-semibold bg-black/60 px-3 py-1 rounded-full">
                 Click to replace
               </span>
             </div>
-            {/* Remove button */}
             <button
               type="button"
-              onClick={e => { e.stopPropagation(); onChange(''); }}
+              onClick={e => { e.stopPropagation(); handleClear(); }}
               className="absolute top-2 right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
             >
               <X size={12} />
             </button>
           </div>
         ) : (
-          /* Empty state */
           <div className="flex flex-col items-center justify-center py-8 gap-2 text-gray-400">
             <Upload size={24} className="text-gray-300" />
             <p className="text-xs font-medium text-gray-500">Drop image here or click to browse</p>
@@ -132,7 +149,6 @@ export default function ImageUpload({ value, onChange, label = 'Image', hint }: 
         )}
       </AnimatePresence>
 
-      {/* Secondary actions */}
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -143,7 +159,6 @@ export default function ImageUpload({ value, onChange, label = 'Image', hint }: 
         </button>
       </div>
 
-      {/* URL fallback input */}
       <AnimatePresence>
         {showUrlInput && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}

@@ -11,6 +11,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { springSmooth, fastTween } from '../../utils/animations';
 import PageTransition from '../../components/PageTransition';
 
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000';
+function toDisplayUrl(url: string | null | undefined): string {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  if (url.startsWith('/uploads/')) return `${API_BASE}${url}`;
+  return url;
+}
+
 const GRADE_LABEL: Record<string, string> = { A: 'Premium', B: 'Standard', C: 'Economy' };
 const GRADE_COLOR: Record<string, string> = {
   A: 'bg-yellow-100 text-yellow-700 border-yellow-200',
@@ -175,7 +183,7 @@ export default function ProductDetail() {
         {/* Image */}
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
           className="relative rounded-2xl overflow-hidden bg-green-50 h-96">
-          <img src={product.imageUrl || DEFAULT_IMG} alt={product.name} className="w-full h-full object-cover"
+          <img src={toDisplayUrl(product.imageUrl) || DEFAULT_IMG} alt={product.name} className="w-full h-full object-cover"
             onError={e => { (e.target as any).src = DEFAULT_IMG; }} />
           <div className="absolute top-4 left-4 flex gap-2">
             <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${GRADE_COLOR[product.grade] || GRADE_COLOR.A}`}>

@@ -6,6 +6,27 @@ const mailer = require('../lib/mailer');
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// ─── SKU generation ───────────────────────────────────────────────────────────
+const VARIETY_CODES = {
+  'Basmati': 'BSM', 'Super Kernel': 'SK', 'IRRI-6': 'IR6',
+  'IRRI-9': 'IR9', 'PK-386': 'PK3', 'Other': 'OTH',
+};
+
+async function generateSKU(variety, grade) {
+  const varCode = VARIETY_CODES[variety] || 'OTH';
+  const gradeCode = grade || 'A';
+  let sku, exists, attempts = 0;
+  do {
+    const ts = Date.now().toString().slice(-4);
+    const rnd = Math.random().toString(36).substring(2, 4).toUpperCase();
+    sku = `RM-${varCode}-${gradeCode}-${ts}${rnd}`;
+    exists = await prisma.product.findUnique({ where: { sku } });
+    attempts++;
+  } while (exists && attempts < 10);
+  if (attempts >= 10) throw new Error('Could not generate unique SKU');
+  return sku;
+}
+
 // ─── PRODUCTS ────────────────────────────────────────────────────────────────
 
 router.get('/products', auth, requireRole('admin'), async (req, res) => {
@@ -20,23 +41,61 @@ router.get('/products', auth, requireRole('admin'), async (req, res) => {
 
 router.post('/products', auth, requireRole('admin'), async (req, res) => {
   try {
-    const { name, variety, grade, description, imageUrl, pricePerKg, minOrderKg, maxOrderKg, isPublished, tags, riceStockId, sortOrder } = req.body;
+    const { name, variety, grade, description, imageUrl, pricePerKg, minOrderKg, maxOrderKg,
+            isPublished, tags, riceStockId, sortOrder, sku: providedSku,
+            weight, packaging, origin, processingType, moistureContent, grainLength,
+            cookingTime, aroma, brokenGrain, certifications, shelfLife,
+            storageInstructions, nutritionInfo } = req.body;
     if (!name || !pricePerKg) return res.status(400).json({ message: 'Name and price required' });
+
+    // Resolve SKU — use provided or auto-generate
+    let finalSku = providedSku?.trim() || null;
+    if (!finalSku) {
+      finalSku = await generateSKU(variety || name, grade || 'A');
+    } else {
+      const existing = await prisma.product.findUnique({ where: { sku: finalSku } });
+      if (existing) return res.status(400).json({ success: false, error: `SKU "${finalSku}" already exists` });
+    }
+
     const product = await prisma.product.create({
-      data: { name, variety: variety || name, grade: grade || 'A', description, imageUrl, pricePerKg: parseFloat(pricePerKg), minOrderKg: parseFloat(minOrderKg || 10), maxOrderKg: maxOrderKg ? parseFloat(maxOrderKg) : null, isPublished: Boolean(isPublished), tags, riceStockId: riceStockId || null, sortOrder: parseInt(sortOrder || 0) }
+      data: {
+        name, variety: variety || name, grade: grade || 'A', sku: finalSku,
+        description, imageUrl, pricePerKg: parseFloat(pricePerKg),
+        minOrderKg: parseFloat(minOrderKg || 10),
+        maxOrderKg: maxOrderKg ? parseFloat(maxOrderKg) : null,
+        isPublished: Boolean(isPublished), tags, riceStockId: riceStockId || null,
+        sortOrder: parseInt(sortOrder || 0),
+        weight: weight ? parseFloat(weight) : null, packaging, origin, processingType,
+        moistureContent, grainLength, cookingTime, aroma, brokenGrain,
+        certifications, shelfLife, storageInstructions, nutritionInfo,
+      }
     });
-    res.status(201).json(product);
+    res.status(201).json({ success: true, data: product });
   } catch (err) { res.status(500).json({ message: 'Server error', error: err.message }); }
 });
 
 router.put('/products/:id', auth, requireRole('admin'), async (req, res) => {
   try {
-    const { name, variety, grade, description, imageUrl, pricePerKg, minOrderKg, maxOrderKg, isPublished, inStock, tags, riceStockId, sortOrder } = req.body;
+    const { name, variety, grade, description, imageUrl, pricePerKg, minOrderKg, maxOrderKg,
+            isPublished, inStock, tags, riceStockId, sortOrder,
+            weight, packaging, origin, processingType, moistureContent, grainLength,
+            cookingTime, aroma, brokenGrain, certifications, shelfLife,
+            storageInstructions, nutritionInfo } = req.body;
     const product = await prisma.product.update({
       where: { id: req.params.id },
-      data: { name, variety, grade, description, imageUrl, pricePerKg: parseFloat(pricePerKg), minOrderKg: parseFloat(minOrderKg || 10), maxOrderKg: maxOrderKg ? parseFloat(maxOrderKg) : null, isPublished: Boolean(isPublished), inStock: Boolean(inStock), tags, riceStockId: riceStockId || null, sortOrder: parseInt(sortOrder || 0) }
+      data: {
+        name, variety, grade, description, imageUrl,
+        pricePerKg: parseFloat(pricePerKg),
+        minOrderKg: parseFloat(minOrderKg || 10),
+        maxOrderKg: maxOrderKg ? parseFloat(maxOrderKg) : null,
+        isPublished: Boolean(isPublished), inStock: Boolean(inStock),
+        tags, riceStockId: riceStockId || null, sortOrder: parseInt(sortOrder || 0),
+        weight: weight ? parseFloat(weight) : null, packaging, origin, processingType,
+        moistureContent, grainLength, cookingTime, aroma, brokenGrain,
+        certifications, shelfLife, storageInstructions, nutritionInfo,
+      }
     });
-    res.json(product);
+    res.json({ success: true, data: product });
   } catch (err) { res.status(500).json({ message: 'Server error' }); }
 });
 
@@ -286,6 +345,87 @@ router.get('/whatsapp-log', auth, requireRole('admin'), async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
+});
+
+// ─── PRICING TIERS ────────────────────────────────────────────────────────────
+
+// Public — active tiers
+router.get('/pricing-tiers', async (req, res) => {
+  try {
+    const tiers = await prisma.pricingTier.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: 'asc' },
+    });
+    res.json({ success: true, data: tiers });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// Admin — all tiers (including inactive)
+router.get('/pricing-tiers/all', auth, requireRole('admin', 'staff'), async (req, res) => {
+  try {
+    const tiers = await prisma.pricingTier.findMany({ orderBy: { sortOrder: 'asc' } });
+    res.json({ success: true, data: tiers });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.post('/pricing-tiers', auth, requireRole('admin'), async (req, res) => {
+  try {
+    const { label, rangeLabel, discount, description, ctaText, ctaType, sortOrder, isActive } = req.body;
+    const tier = await prisma.pricingTier.create({
+      data: { label, rangeLabel, discount, description, ctaText, ctaType, sortOrder: parseInt(sortOrder || 0), isActive: isActive !== false },
+    });
+    res.status(201).json({ success: true, data: tier });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.put('/pricing-tiers/:id', auth, requireRole('admin'), async (req, res) => {
+  try {
+    const { label, rangeLabel, discount, description, ctaText, ctaType, sortOrder, isActive } = req.body;
+    const tier = await prisma.pricingTier.update({
+      where: { id: req.params.id },
+      data: { label, rangeLabel, discount, description, ctaText, ctaType, sortOrder: parseInt(sortOrder || 0), isActive: Boolean(isActive) },
+    });
+    res.json({ success: true, data: tier });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.delete('/pricing-tiers/:id', auth, requireRole('admin'), async (req, res) => {
+  try {
+    await prisma.pricingTier.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.patch('/pricing-tiers/reorder', auth, requireRole('admin'), async (req, res) => {
+  try {
+    const { ids } = req.body; // ordered array of ids
+    await Promise.all(ids.map((id, i) =>
+      prisma.pricingTier.update({ where: { id }, data: { sortOrder: i + 1 } })
+    ));
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// ─── WHOLESALE PAGE CONTENT ────────────────────────────────────────────────────
+
+router.get('/wholesale-content', async (req, res) => {
+  try {
+    let content = await prisma.wholesalePageContent.findUnique({ where: { id: 'main' } });
+    if (!content) content = await prisma.wholesalePageContent.create({ data: { id: 'main' } });
+    res.json({ success: true, data: content });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.put('/wholesale-content', auth, requireRole('admin'), async (req, res) => {
+  try {
+    const { heroTitle, heroSubtitle, exportNote, testimonialText, testimonialName, testimonialRole, warehouseImage, loadingImage } = req.body;
+    const content = await prisma.wholesalePageContent.upsert({
+      where: { id: 'main' },
+      update: { heroTitle, heroSubtitle, exportNote, testimonialText, testimonialName, testimonialRole, warehouseImage, loadingImage },
+      create: { id: 'main', heroTitle, heroSubtitle, exportNote, testimonialText, testimonialName, testimonialRole, warehouseImage, loadingImage },
+    });
+    res.json({ success: true, data: content });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 module.exports = router;

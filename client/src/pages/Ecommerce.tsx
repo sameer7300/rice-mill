@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../api';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, Eye, EyeOff, Settings, Tag, BarChart3, ShoppingBag, ExternalLink, RefreshCw, Globe, Package, Edit3, Send, CheckCircle2, Mail } from 'lucide-react';
+import { Plus, Trash2, Eye, EyeOff, Settings, Tag, BarChart3, ShoppingBag, ExternalLink, RefreshCw, Globe, Package, Edit3, Send, CheckCircle2, Mail, X } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import StatCard from '../components/ui/StatCard';
 import { TableSkeleton } from '../components/ui/Skeleton';
@@ -11,7 +11,7 @@ import { OrderStatusBadge } from '../components/ui/Badge';
 import PageTransition from '../components/PageTransition';
 import ImageUpload from '../components/ui/ImageUpload';
 
-const TABS = ['overview', 'products', 'discounts', 'email', 'settings'] as const;
+const TABS = ['overview', 'products', 'discounts', 'email', 'settings', 'pricing-tiers', 'faqs'] as const;
 type Tab = typeof TABS[number];
 
 export default function Ecommerce() {
@@ -24,9 +24,40 @@ export default function Ecommerce() {
   const [loading, setLoading] = useState(true);
   const [showProduct, setShowProduct] = useState<any>(null); // null=closed, {}=new, {...}=edit
   const [showDiscount, setShowDiscount] = useState(false);
-  const [productForm, setProductForm] = useState({ name: '', variety: '', grade: 'A', description: '', imageUrl: '', pricePerKg: '', minOrderKg: '10', isPublished: false, inStock: true, riceStockId: '', sortOrder: '0' });
+  const EMPTY_PRODUCT = {
+    name: '', variety: '', grade: 'A', sku: '', description: '', imageUrl: '',
+    pricePerKg: '', minOrderKg: '10', isPublished: false, inStock: true,
+    riceStockId: '', sortOrder: '0',
+    // Specifications
+    weight: '', packaging: '', origin: '', processingType: '', moistureContent: '',
+    grainLength: '', cookingTime: '', aroma: '', brokenGrain: '', certifications: '',
+    shelfLife: '', storageInstructions: '',
+    // Nutrition stored as JSON string
+    nutritionInfo: '',
+  };
+  const DEFAULT_NUTRITION = [
+    { nutrient: 'Energy',        per100g: '130', unit: 'kcal' },
+    { nutrient: 'Protein',       per100g: '2.7', unit: 'g' },
+    { nutrient: 'Carbohydrates', per100g: '28',  unit: 'g' },
+    { nutrient: 'Fat',           per100g: '0.3', unit: 'g' },
+    { nutrient: 'Fiber',         per100g: '0.4', unit: 'g' },
+    { nutrient: 'Sodium',        per100g: '1',   unit: 'mg' },
+  ];
+  const [productForm, setProductForm] = useState<any>({ ...EMPTY_PRODUCT });
+  const [productModalTab, setPMT] = useState<'basic' | 'specs' | 'nutrition'>('basic');
+  const [nutritionRows, setNutritionRows] = useState<{ nutrient: string; per100g: string; unit: string }[]>(DEFAULT_NUTRITION);
   const [discountForm, setDiscountForm] = useState({ code: '', description: '', type: 'percentage', value: '', minOrderAmt: '0', usageLimit: '0', expiresAt: '', isActive: true });
   const [savingSettings, setSavingSettings] = useState(false);
+
+  // Pricing Tiers tab
+  const [pricingTiers, setPricingTiers] = useState<any[]>([]);
+  const [tierModal, setTierModal] = useState<any>(null);
+  const [tierForm, setTierForm] = useState({ label: '', rangeLabel: '', discount: '', description: '', ctaText: 'Request quote', ctaType: 'quote', sortOrder: '0', isActive: true });
+
+  // FAQs tab
+  const [faqs, setFaqs] = useState<any[]>([]);
+  const [faqModal, setFaqModal] = useState<any>(null);
+  const [faqForm, setFaqForm] = useState({ question: '', answer: '', sortOrder: '0', isActive: true });
   const [testEmailSending, setTES] = useState(false);
   // Email tab state
   const [emailForm, setEF] = useState({
@@ -64,6 +95,16 @@ export default function Ecommerce() {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
+  // Load pricing tiers and FAQs when their tabs are opened
+  useEffect(() => {
+    if (tab === 'pricing-tiers') {
+      api.get('/ecommerce/pricing-tiers/all').then(r => setPricingTiers(r.data.data || [])).catch(() => {});
+    }
+    if (tab === 'faqs') {
+      api.get('/faq/all').then(r => setFaqs(r.data.data || [])).catch(() => {});
+    }
+  }, [tab]);
+
   useEffect(() => {
     if (tab === 'email') {
       api.get('/newsletter/subscribers?limit=1').then(r => setSC(r.data.total || 0)).catch(() => {});
@@ -72,17 +113,20 @@ export default function Ecommerce() {
 
   const saveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = { ...productForm, nutritionInfo: JSON.stringify(nutritionRows) };
     try {
       if (showProduct?.id) {
-        await api.put(`/ecommerce/products/${showProduct.id}`, productForm);
+        await api.put(`/ecommerce/products/${showProduct.id}`, payload);
         toast.success('Product updated');
       } else {
-        await api.post('/ecommerce/products', productForm);
-        toast.success('Product created!');
+        const res = await api.post('/ecommerce/products', payload);
+        const sku = res.data?.data?.sku;
+        toast.success(sku ? `Product created. SKU: ${sku}` : 'Product created!');
       }
       setShowProduct(null);
+      setPMT('basic');
       fetchAll();
-    } catch (err: any) { toast.error(err.response?.data?.message || 'Error'); }
+    } catch (err: any) { toast.error(err.response?.data?.message || err.response?.data?.error || 'Error'); }
   };
 
   const deleteProduct = async (id: string) => {
@@ -124,7 +168,24 @@ export default function Ecommerce() {
   };
 
   const openEditProduct = (p: any) => {
-    setProductForm({ name: p.name, variety: p.variety, grade: p.grade, description: p.description || '', imageUrl: p.imageUrl || '', pricePerKg: String(p.pricePerKg), minOrderKg: String(p.minOrderKg), isPublished: p.isPublished, inStock: p.inStock, riceStockId: p.riceStockId || '', sortOrder: String(p.sortOrder || 0) });
+    setProductForm({
+      name: p.name, variety: p.variety, grade: p.grade, sku: p.sku || '',
+      description: p.description || '', imageUrl: p.imageUrl || '',
+      pricePerKg: String(p.pricePerKg), minOrderKg: String(p.minOrderKg),
+      isPublished: p.isPublished, inStock: p.inStock,
+      riceStockId: p.riceStockId || '', sortOrder: String(p.sortOrder || 0),
+      weight: p.weight ? String(p.weight) : '', packaging: p.packaging || '',
+      origin: p.origin || '', processingType: p.processingType || '',
+      moistureContent: p.moistureContent || '', grainLength: p.grainLength || '',
+      cookingTime: p.cookingTime || '', aroma: p.aroma || '',
+      brokenGrain: p.brokenGrain || '', certifications: p.certifications || '',
+      shelfLife: p.shelfLife || '', storageInstructions: p.storageInstructions || '',
+      nutritionInfo: p.nutritionInfo || '',
+    });
+    try {
+      setNutritionRows(p.nutritionInfo ? JSON.parse(p.nutritionInfo) : DEFAULT_NUTRITION);
+    } catch { setNutritionRows(DEFAULT_NUTRITION); }
+    setPMT('basic');
     setShowProduct(p);
   };
 
@@ -216,7 +277,7 @@ export default function Ecommerce() {
       {tab === 'products' && (
         <div className="space-y-4">
           <div className="flex justify-end">
-            <ActionButton onClick={() => { setProductForm({ name: '', variety: '', grade: 'A', description: '', imageUrl: '', pricePerKg: '', minOrderKg: '10', isPublished: false, inStock: true, riceStockId: '', sortOrder: '0' }); setShowProduct({}); }} icon={<Plus size={15} />} label="Add Product" />
+            <ActionButton onClick={() => { setProductForm({ ...EMPTY_PRODUCT }); setNutritionRows(DEFAULT_NUTRITION); setPMT('basic'); setShowProduct({}); }} icon={<Plus size={15} />} label="Add Product" />
           </div>
 
           {loading ? <TableSkeleton rows={5} cols={6} /> : (
@@ -506,39 +567,212 @@ export default function Ecommerce() {
         </>
       )}
 
+      {/* ── PRICING TIERS TAB ──────────────────────────────────────────────── */}
+      {tab === 'pricing-tiers' && (
+        <>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Pricing Tiers</h2>
+              <p className="text-sm text-gray-500 mt-0.5">Shown on homepage wholesale section and /wholesale page</p>
+            </div>
+            <button onClick={() => { setTierForm({ label: '', rangeLabel: '', discount: '', description: '', ctaText: 'Request quote', ctaType: 'quote', sortOrder: String(pricingTiers.length + 1), isActive: true }); setTierModal({}); }}
+              className="flex items-center gap-1.5 px-3 py-2 bg-green-700 text-white text-sm font-semibold rounded-xl hover:bg-green-800 transition-colors">
+              <Plus size={15} /> Add Tier
+            </button>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-xs text-gray-500 font-semibold uppercase tracking-wide">
+                <tr>
+                  <th className="px-4 py-3 text-left">Label</th>
+                  <th className="px-4 py-3 text-left">Range</th>
+                  <th className="px-4 py-3 text-left">Pricing / Discount</th>
+                  <th className="px-4 py-3 text-left">CTA</th>
+                  <th className="px-4 py-3 text-left">Status</th>
+                  <th className="px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {pricingTiers.map(tier => (
+                  <tr key={tier.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-mono font-bold text-green-700">{tier.label}</td>
+                    <td className="px-4 py-3 text-gray-700">{tier.rangeLabel}</td>
+                    <td className="px-4 py-3 text-gray-600">{tier.discount || tier.description || '—'}</td>
+                    <td className="px-4 py-3 text-gray-500">{tier.ctaText}</td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${tier.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        {tier.isActive ? 'Active' : 'Hidden'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 flex gap-2 justify-end">
+                      <button onClick={() => { setTierForm({ label: tier.label, rangeLabel: tier.rangeLabel, discount: tier.discount || '', description: tier.description || '', ctaText: tier.ctaText, ctaType: tier.ctaType, sortOrder: String(tier.sortOrder), isActive: tier.isActive }); setTierModal(tier); }}
+                        className="p-1.5 text-gray-400 hover:text-green-600 rounded-lg hover:bg-green-50 transition-colors"><Edit3 size={14} /></button>
+                      <button onClick={async () => { if (!confirm('Delete this tier?')) return; await api.delete(`/ecommerce/pricing-tiers/${tier.id}`); api.get('/ecommerce/pricing-tiers/all').then(r => setPricingTiers(r.data.data || [])); }}
+                        className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"><Trash2 size={14} /></button>
+                    </td>
+                  </tr>
+                ))}
+                {pricingTiers.length === 0 && (
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">No tiers yet. Add one above.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {/* ── FAQs TAB ────────────────────────────────────────────────────────── */}
+      {tab === 'faqs' && (
+        <>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">FAQs</h2>
+              <p className="text-sm text-gray-500 mt-0.5">Shown on homepage and /wholesale page</p>
+            </div>
+            <button onClick={() => { setFaqForm({ question: '', answer: '', sortOrder: String(faqs.length + 1), isActive: true }); setFaqModal({}); }}
+              className="flex items-center gap-1.5 px-3 py-2 bg-green-700 text-white text-sm font-semibold rounded-xl hover:bg-green-800 transition-colors">
+              <Plus size={15} /> Add FAQ
+            </button>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-xs text-gray-500 font-semibold uppercase tracking-wide">
+                <tr>
+                  <th className="px-4 py-3 text-left">#</th>
+                  <th className="px-4 py-3 text-left">Question</th>
+                  <th className="px-4 py-3 text-left">Status</th>
+                  <th className="px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {faqs.map((faq, idx) => (
+                  <tr key={faq.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-gray-400 font-mono text-xs">{faq.sortOrder}</td>
+                    <td className="px-4 py-3 text-gray-900 max-w-md truncate">{faq.question}</td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${faq.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        {faq.isActive ? 'Active' : 'Hidden'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 flex gap-2 justify-end">
+                      <button onClick={() => { setFaqForm({ question: faq.question, answer: faq.answer, sortOrder: String(faq.sortOrder), isActive: faq.isActive }); setFaqModal(faq); }}
+                        className="p-1.5 text-gray-400 hover:text-green-600 rounded-lg hover:bg-green-50 transition-colors"><Edit3 size={14} /></button>
+                      <button onClick={async () => { if (!confirm('Delete this FAQ?')) return; await api.delete(`/faq/${faq.id}`); api.get('/faq/all').then(r => setFaqs(r.data.data || [])); }}
+                        className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"><Trash2 size={14} /></button>
+                    </td>
+                  </tr>
+                ))}
+                {faqs.length === 0 && (
+                  <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400">No FAQs yet. Add one above.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
       {/* Product modal */}
       {showProduct !== null && (
-        <Modal title={showProduct?.id ? 'Edit Product' : 'New Product'} onClose={() => setShowProduct(null)} size="lg">
+        <Modal title={showProduct?.id ? 'Edit Product' : 'New Product'} onClose={() => setShowProduct(null)} size="xl">
+          {/* Tab bar */}
+          <div className="flex gap-1 mb-5 bg-gray-100 rounded-xl p-1">
+            {(['basic', 'specs', 'nutrition'] as const).map(t => (
+              <button key={t} type="button" onClick={() => setPMT(t)}
+                className={`flex-1 py-1.5 rounded-lg text-sm font-medium capitalize transition-all ${productModalTab === t ? 'bg-white shadow text-green-700' : 'text-gray-600 hover:text-gray-900'}`}>
+                {t === 'basic' ? '📦 Basic Info' : t === 'specs' ? '🔬 Specifications' : '🥗 Nutrition'}
+              </button>
+            ))}
+          </div>
+
           <form onSubmit={saveProduct} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <FormField label="Product Name" required><input type="text" value={productForm.name} onChange={e => setProductForm(f => ({ ...f, name: e.target.value }))} required className={inputCls} placeholder="Premium Basmati Rice" /></FormField>
-              <FormField label="Variety"><input type="text" value={productForm.variety} onChange={e => setProductForm(f => ({ ...f, variety: e.target.value }))} className={inputCls} placeholder="Basmati" /></FormField>
-              <FormField label="Grade">
-                <select value={productForm.grade} onChange={e => setProductForm(f => ({ ...f, grade: e.target.value }))} className={selectCls}>
-                  <option value="A">A — Premium</option><option value="B">B — Standard</option><option value="C">C — Economy</option>
-                </select>
-              </FormField>
-              <FormField label="Price per kg (PKR)" required><input type="number" min="0" value={productForm.pricePerKg} onChange={e => setProductForm(f => ({ ...f, pricePerKg: e.target.value }))} required className={inputCls} /></FormField>
-              <FormField label="Min Order (kg)"><input type="number" min="1" value={productForm.minOrderKg} onChange={e => setProductForm(f => ({ ...f, minOrderKg: e.target.value }))} className={inputCls} /></FormField>
-              <FormField label="Link to Rice Stock (optional)">
-                <select value={productForm.riceStockId} onChange={e => setProductForm(f => ({ ...f, riceStockId: e.target.value }))} className={selectCls}>
-                  <option value="">No link (manual stock)</option>
-                  {riceStock.map((r: any) => <option key={r.id} value={r.id}>{r.variety} Grade {r.grade} — {r.quantityKg}kg</option>)}
-                </select>
-              </FormField>
-            </div>
-            <FormField label="Description"><textarea value={productForm.description} onChange={e => setProductForm(f => ({ ...f, description: e.target.value }))} rows={2} className={inputCls} /></FormField>
-            <ImageUpload
-              value={productForm.imageUrl}
-              onChange={url => setProductForm(f => ({ ...f, imageUrl: url }))}
-              label="Product Image"
-              hint="Displayed on storefront product cards and detail page"
-            />
-            <div className="flex gap-5">
-              <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={productForm.isPublished} onChange={e => setProductForm(f => ({ ...f, isPublished: e.target.checked }))} className="w-4 h-4 accent-green-600" /><span className="font-medium text-gray-700">Published (visible to customers)</span></label>
-              <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={productForm.inStock} onChange={e => setProductForm(f => ({ ...f, inStock: e.target.checked }))} className="w-4 h-4 accent-blue-600" /><span className="font-medium text-gray-700">In Stock</span></label>
-            </div>
-            <div className="flex gap-3 pt-2">
+            {/* ── BASIC TAB ── */}
+            {productModalTab === 'basic' && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField label="Product Name" required><input type="text" value={productForm.name} onChange={e => setProductForm((f: any) => ({ ...f, name: e.target.value }))} required className={inputCls} placeholder="Premium Basmati Rice" /></FormField>
+                  <FormField label="Variety"><input type="text" value={productForm.variety} onChange={e => setProductForm((f: any) => ({ ...f, variety: e.target.value }))} className={inputCls} placeholder="Basmati" /></FormField>
+                  <FormField label="Grade">
+                    <select value={productForm.grade} onChange={e => setProductForm((f: any) => ({ ...f, grade: e.target.value }))} className={selectCls}>
+                      <option value="A">A — Premium</option><option value="B">B — Standard</option><option value="C">C — Economy</option>
+                    </select>
+                  </FormField>
+                  <FormField label="SKU">
+                    <div className="flex gap-2">
+                      <input type="text" value={productForm.sku} onChange={e => setProductForm((f: any) => ({ ...f, sku: e.target.value }))} className={`${inputCls} font-mono text-xs`} placeholder="Auto-generated on save" />
+                      {productForm.sku && <span className="px-2 py-2 bg-green-50 border border-green-200 rounded-lg text-xs text-green-700 font-mono whitespace-nowrap">{productForm.sku}</span>}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">Leave blank to auto-generate (e.g. RM-BSM-A-4821)</p>
+                  </FormField>
+                  <FormField label="Price per kg (PKR)" required><input type="number" min="0" value={productForm.pricePerKg} onChange={e => setProductForm((f: any) => ({ ...f, pricePerKg: e.target.value }))} required className={inputCls} /></FormField>
+                  <FormField label="Min Order (kg)"><input type="number" min="1" value={productForm.minOrderKg} onChange={e => setProductForm((f: any) => ({ ...f, minOrderKg: e.target.value }))} className={inputCls} /></FormField>
+                  <FormField label="Link to Rice Stock (optional)" className="col-span-2">
+                    <select value={productForm.riceStockId} onChange={e => setProductForm((f: any) => ({ ...f, riceStockId: e.target.value }))} className={selectCls}>
+                      <option value="">No link (manual stock)</option>
+                      {riceStock.map((r: any) => <option key={r.id} value={r.id}>{r.variety} Grade {r.grade} — {r.quantityKg}kg</option>)}
+                    </select>
+                  </FormField>
+                </div>
+                <FormField label="Description"><textarea value={productForm.description} onChange={e => setProductForm((f: any) => ({ ...f, description: e.target.value }))} rows={2} className={inputCls} /></FormField>
+                <ImageUpload value={productForm.imageUrl} onChange={url => setProductForm((f: any) => ({ ...f, imageUrl: url }))} label="Product Image" hint="Displayed on storefront product cards and detail page" />
+                <div className="flex gap-5">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={productForm.isPublished} onChange={e => setProductForm((f: any) => ({ ...f, isPublished: e.target.checked }))} className="w-4 h-4 accent-green-600" /><span className="font-medium text-gray-700">Published</span></label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={productForm.inStock} onChange={e => setProductForm((f: any) => ({ ...f, inStock: e.target.checked }))} className="w-4 h-4 accent-blue-600" /><span className="font-medium text-gray-700">In Stock</span></label>
+                </div>
+              </>
+            )}
+
+            {/* ── SPECS TAB ── */}
+            {productModalTab === 'specs' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  { key: 'weight', label: 'Weight per bag (kg)', type: 'number', placeholder: 'e.g. 25' },
+                  { key: 'packaging', label: 'Packaging Type', placeholder: 'e.g. 25kg Jute Bag' },
+                  { key: 'origin', label: 'Origin', placeholder: 'e.g. Punjab, Pakistan' },
+                  { key: 'processingType', label: 'Processing Type', placeholder: 'e.g. Double Polished' },
+                  { key: 'moistureContent', label: 'Moisture Content', placeholder: 'e.g. 12-14%' },
+                  { key: 'grainLength', label: 'Grain Length', placeholder: 'e.g. Extra Long (7mm+)' },
+                  { key: 'cookingTime', label: 'Cooking Time', placeholder: 'e.g. 20-25 minutes' },
+                  { key: 'aroma', label: 'Aroma', placeholder: 'e.g. Strong' },
+                  { key: 'brokenGrain', label: 'Broken Grain %', placeholder: 'e.g. Max 2%' },
+                  { key: 'certifications', label: 'Certifications', placeholder: 'e.g. ISO 9001, PSQCA' },
+                  { key: 'shelfLife', label: 'Shelf Life', placeholder: 'e.g. 12 months' },
+                  { key: 'storageInstructions', label: 'Storage Instructions', placeholder: 'e.g. Store in cool, dry place' },
+                ].map(f => (
+                  <FormField key={f.key} label={f.label}>
+                    <input type={f.type || 'text'} value={productForm[f.key] || ''} onChange={e => setProductForm((pf: any) => ({ ...pf, [f.key]: e.target.value }))} className={inputCls} placeholder={f.placeholder} />
+                  </FormField>
+                ))}
+              </div>
+            )}
+
+            {/* ── NUTRITION TAB ── */}
+            {productModalTab === 'nutrition' && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-500 px-1">
+                  <span className="col-span-5">Nutrient</span>
+                  <span className="col-span-4">Per 100g</span>
+                  <span className="col-span-2">Unit</span>
+                  <span className="col-span-1" />
+                </div>
+                {nutritionRows.map((row, i) => (
+                  <div key={i} className="grid grid-cols-12 gap-2 items-center">
+                    <input value={row.nutrient} onChange={e => setNutritionRows(prev => prev.map((r, idx) => idx === i ? { ...r, nutrient: e.target.value } : r))} className={`col-span-5 ${inputCls}`} placeholder="e.g. Protein" />
+                    <input value={row.per100g} onChange={e => setNutritionRows(prev => prev.map((r, idx) => idx === i ? { ...r, per100g: e.target.value } : r))} className={`col-span-4 ${inputCls}`} placeholder="2.7" />
+                    <select value={row.unit} onChange={e => setNutritionRows(prev => prev.map((r, idx) => idx === i ? { ...r, unit: e.target.value } : r))} className={`col-span-2 ${selectCls}`}>
+                      {['kcal', 'g', 'mg', 'µg', '%'].map(u => <option key={u} value={u}>{u}</option>)}
+                    </select>
+                    <button type="button" onClick={() => setNutritionRows(prev => prev.filter((_, idx) => idx !== i))} className="col-span-1 text-red-400 hover:text-red-600 flex items-center justify-center">
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+                <button type="button" onClick={() => setNutritionRows(prev => [...prev, { nutrient: '', per100g: '', unit: 'g' }])} className="text-sm text-green-600 hover:text-green-700 font-medium flex items-center gap-1">
+                  <Plus size={14} /> Add row
+                </button>
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-2 border-t border-gray-100">
               <button type="button" onClick={() => setShowProduct(null)} className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-xl text-sm hover:bg-gray-50">Cancel</button>
               <button type="submit" className="flex-1 bg-green-700 hover:bg-green-800 text-white py-2.5 rounded-xl text-sm font-semibold">Save Product</button>
             </div>
@@ -564,6 +798,63 @@ export default function Ecommerce() {
               <button type="submit" className="flex-1 bg-green-700 hover:bg-green-800 text-white py-2.5 rounded-xl text-sm font-semibold">Create Code</button>
             </div>
           </form>
+        </Modal>
+      )}
+      {/* Pricing Tier modal */}
+      {tierModal !== null && (
+        <Modal title={tierModal?.id ? 'Edit Tier' : 'New Pricing Tier'} onClose={() => setTierModal(null)}>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Label (e.g. TRADE)"><input value={tierForm.label} onChange={e => setTierForm(f => ({ ...f, label: e.target.value.toUpperCase() }))} className={`${inputCls} font-mono uppercase`} placeholder="TRADE" /></FormField>
+              <FormField label="Range Label"><input value={tierForm.rangeLabel} onChange={e => setTierForm(f => ({ ...f, rangeLabel: e.target.value }))} className={inputCls} placeholder="50 – 499 kg" /></FormField>
+            </div>
+            <FormField label="Discount / Pricing Line"><input value={tierForm.discount} onChange={e => setTierForm(f => ({ ...f, discount: e.target.value }))} className={inputCls} placeholder="−12% across the catalogue" /></FormField>
+            <FormField label="Description (fallback)"><input value={tierForm.description} onChange={e => setTierForm(f => ({ ...f, description: e.target.value }))} className={inputCls} placeholder="Standard catalogue pricing" /></FormField>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="CTA Text"><input value={tierForm.ctaText} onChange={e => setTierForm(f => ({ ...f, ctaText: e.target.value }))} className={inputCls} placeholder="Request quote" /></FormField>
+              <FormField label="CTA Type"><select value={tierForm.ctaType} onChange={e => setTierForm(f => ({ ...f, ctaType: e.target.value }))} className={selectCls}><option value="link">Link to products</option><option value="quote">Request quote</option><option value="contact">Contact founders</option></select></FormField>
+            </div>
+            <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={tierForm.isActive} onChange={e => setTierForm(f => ({ ...f, isActive: e.target.checked }))} className="w-4 h-4 accent-green-600" /><span className="font-medium text-gray-700">Active (visible on site)</span></label>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setTierModal(null)} className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-xl text-sm hover:bg-gray-50">Cancel</button>
+              <button onClick={async () => {
+                try {
+                  if (tierModal?.id) { await api.put(`/ecommerce/pricing-tiers/${tierModal.id}`, tierForm); }
+                  else { await api.post('/ecommerce/pricing-tiers', tierForm); }
+                  toast.success('Saved!'); setTierModal(null);
+                  api.get('/ecommerce/pricing-tiers/all').then(r => setPricingTiers(r.data.data || []));
+                } catch (err: any) { toast.error(err.response?.data?.error || 'Error'); }
+              }} className="flex-1 bg-green-700 hover:bg-green-800 text-white py-2.5 rounded-xl text-sm font-semibold">Save Tier</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* FAQ modal */}
+      {faqModal !== null && (
+        <Modal title={faqModal?.id ? 'Edit FAQ' : 'New FAQ'} onClose={() => setFaqModal(null)} size="lg">
+          <div className="space-y-4">
+            <FormField label="Question"><textarea value={faqForm.question} onChange={e => setFaqForm(f => ({ ...f, question: e.target.value }))} rows={2} className={inputCls} placeholder="What is the minimum order?" /></FormField>
+            <FormField label="Answer"><textarea value={faqForm.answer} onChange={e => setFaqForm(f => ({ ...f, answer: e.target.value }))} rows={4} className={inputCls} placeholder="Minimum order is 5kg..." /></FormField>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Sort Order"><input type="number" value={faqForm.sortOrder} onChange={e => setFaqForm(f => ({ ...f, sortOrder: e.target.value }))} className={inputCls} /></FormField>
+              <div className="flex items-end pb-1">
+                <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={faqForm.isActive} onChange={e => setFaqForm(f => ({ ...f, isActive: e.target.checked }))} className="w-4 h-4 accent-green-600" /><span className="font-medium text-gray-700">Active (visible)</span></label>
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setFaqModal(null)} className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-xl text-sm hover:bg-gray-50">Cancel</button>
+              <button onClick={async () => {
+                try {
+                  const payload = { ...faqForm, sortOrder: parseInt(faqForm.sortOrder || '0') };
+                  if (faqModal?.id) { await api.put(`/faq/${faqModal.id}`, payload); }
+                  else { await api.post('/faq', payload); }
+                  toast.success('Saved!'); setFaqModal(null);
+                  api.get('/faq/all').then(r => setFaqs(r.data.data || []));
+                } catch (err: any) { toast.error(err.response?.data?.error || 'Error'); }
+              }} className="flex-1 bg-green-700 hover:bg-green-800 text-white py-2.5 rounded-xl text-sm font-semibold">Save FAQ</button>
+            </div>
+          </div>
         </Modal>
       )}
     </div>

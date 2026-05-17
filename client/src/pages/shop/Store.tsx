@@ -37,14 +37,7 @@ const WHOLESALE_TIERS = [
   { tier: 'WHOLESALE', range: '500 – 4,999 kg', price: '−18% · dedicated account manager',   cta: 'Request quote →' },
   { tier: 'CONTAINER', range: '5,000 kg +',    price: 'Bespoke pricing · FOB Karachi · export docs', cta: 'Speak to founders →' },
 ];
-const FAQ_ITEMS = [
-  { q: 'How quickly do you ship?',                    a: 'Same-day dispatch within KPK for orders placed before 2 PM. Nationwide delivery via TCS or Leopards takes 24–48 hours. International orders are shipped FOB Karachi — typically 7–14 days.' },
-  { q: 'What is the difference between aged and fresh basmati?', a: 'Aged basmati rests in jute sacks for 6–12 months before milling. The wait does three things: grains lengthen further, starch settles so cooked rice separates cleanly, and the natural aroma deepens. All Al-Noor basmati is aged a minimum of nine months.' },
-  { q: 'Do you offer wholesale pricing?',             a: 'Yes — three tiers. Trade pricing (−12%) at 50kg. Wholesale (−18%) at 500kg with a dedicated account manager. Container-scale pricing is bespoke, FOB Karachi, with full export documentation included.' },
-  { q: 'How do I know the rice is fresh?',            a: 'Every bag is stamped with the mill date and batch number. The aroma of freshly milled basmati is unmistakable when the bag is opened. If anything seems off within 30 days, message us and we will replace the bag at no charge.' },
-  { q: 'Do you ship internationally?',                a: 'We ship regularly to UAE, Saudi Arabia, UK, Canada, and Australia. Container minimums start at 5,000 kg. Request a quote with your destination port and we\'ll return a CIF estimate within 24 hours.' },
-  { q: 'Is the rice halal and certified?',            a: 'Yes. PCSIR-tested, ISO 22000 certified, HALAL certified by IFANCA, HACCP-audited annually. Certificates are available on request and included automatically with all export orders.' },
-];
+// FAQs are fetched from API (admin-configurable)
 
 // ── Counter component (scroll-triggered number animation) ─────────────────────
 function Counter({ to, suffix = '', duration = 2200 }: { to: number; suffix?: string; duration?: number }) {
@@ -106,11 +99,13 @@ export default function Store() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [compareIds, setCompareIds] = useState<string[]>([]);
-  const [recentlyViewed, setRV] = useState<any[]>([]);
   const [testimonials, setTestimonials] = useState<any[]>([]);
   const [spotlight, setSpotlight] = useState<any>(null);
   const [favs, setFavs] = useState<string[]>([]);
-  const [openFaq, setOpenFaq] = useState(0);
+  const [openFaq, setOpenFaq] = useState(-1);
+  const [faqs, setFaqs] = useState<any[]>([]);
+  const [pricingTiers, setPricingTiers] = useState<any[]>([]);
+  const [wholesaleContent, setWholesaleContent] = useState<any>(null);
 
   // ── URL filter params ───────────────────────────────────────────────────────
   const search    = searchParams.get('q')       || '';
@@ -162,8 +157,9 @@ export default function Store() {
     fetchProducts();
     api.get('/shop/settings').then(r => setSettings(r.data)).catch(() => {});
     api.get('/shop/varieties').then(r => setVarieties(r.data || [])).catch(() => {});
+    // Recently-viewed tracking: still sends view events (for backend) but we no longer display the section
     const sid = localStorage.getItem('sessionId') || (() => { const s = Math.random().toString(36).slice(2); localStorage.setItem('sessionId', s); return s; })();
-    api.get('/products/recently-viewed', { headers: { 'X-Session-ID': sid } }).then(r => setRV(r.data.data || [])).catch(() => {});
+    localStorage.setItem('sessionId', sid);
   }, [fetchProducts]);
 
   useEffect(() => {
@@ -172,6 +168,9 @@ export default function Store() {
       const prods = r.data.products || r.data || [];
       if (prods.length) setSpotlight(prods[0]);
     }).catch(() => {});
+    api.get('/faq').then(r => setFaqs(r.data.data || [])).catch(() => {});
+    api.get('/ecommerce/pricing-tiers').then(r => setPricingTiers(r.data.data || [])).catch(() => {});
+    api.get('/ecommerce/wholesale-content').then(r => setWholesaleContent(r.data.data)).catch(() => {});
   }, []);
 
   const handleAddToCart = (product: any) => {
@@ -180,7 +179,14 @@ export default function Store() {
     toast.success(`${product.name} added to cart`);
   };
   const inCart = (id: string) => items.some(i => i.productId === id);
-  const imgSrc = (p: any) => p.imageUrl || PLACEHOLDER[p.variety] || PLACEHOLDER.default;
+  const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000';
+  const toDisplayUrl = (url: string | null | undefined) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/uploads/')) return `${API_BASE}${url}`;
+    return url;
+  };
+  const imgSrc = (p: any) => toDisplayUrl(p.imageUrl) || PLACEHOLDER[p.variety] || PLACEHOLDER.default;
   const formatPKR = (n: number) => `₨${n.toLocaleString()}`;
   const toggleCompare = (id: string) => setCompareIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : prev.length >= 4 ? (toast.error('Max 4'), prev) : [...prev, id]);
   const toggleFav = (id: string) => setFavs(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -664,18 +670,18 @@ export default function Store() {
             </Reveal>
             <Reveal delay={200}>
               <p style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--ink-2)', margin: '24px 0 40px', maxWidth: 480 }}>
-                Volume pricing starts at 50kg with three tier breaks. Container-scale orders ship FOB Karachi with full export documentation. Dedicated account manager assigned at the 500kg tier.
+                {wholesaleContent?.exportNote || 'Volume pricing starts at 50kg with three tier breaks. Container-scale orders ship FOB Karachi with full export documentation. Dedicated account manager assigned at the 500kg tier.'}
               </p>
             </Reveal>
             <div style={{ borderTop: '1px solid var(--ink)' }}>
-              {WHOLESALE_TIERS.map((tier, i) => (
-                <Reveal key={tier.tier} delay={i * 60}>
+              {(pricingTiers.length ? pricingTiers : WHOLESALE_TIERS).map((tier: any, i: number) => (
+                <Reveal key={tier.id || tier.tier} delay={i * 60}>
                   <div className="wt-row"
-                    onClick={() => navigate('/contact?subject=Wholesale+Inquiry')}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--paddy)' }}>{tier.tier}</span>
-                    <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontStyle: 'italic' }}>{tier.range}</span>
-                    <span style={{ fontSize: 14, color: 'var(--ink-2)' }}>{tier.price}</span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink)', textAlign: 'right' }}>{tier.cta}</span>
+                    onClick={() => (tier.ctaType === 'link' ? document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' }) : navigate('/wholesale'))}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--paddy)' }}>{tier.label || tier.tier}</span>
+                    <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontStyle: 'italic' }}>{tier.rangeLabel || tier.range}</span>
+                    <span style={{ fontSize: 14, color: 'var(--ink-2)' }}>{tier.discount || tier.description || tier.price}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink)', textAlign: 'right' }}>{tier.ctaText || tier.cta} →</span>
                   </div>
                 </Reveal>
               ))}
@@ -849,13 +855,17 @@ export default function Store() {
           </div>
 
           <div style={{ borderTop: '1px solid var(--ink)' }}>
-            {FAQ_ITEMS.map((faq, i) => (
-              <div key={i} className={`faq-item${openFaq === i ? ' open' : ''}`} onClick={() => setOpenFaq(openFaq === i ? -1 : i)}>
+            {(faqs.length > 0 ? faqs : [
+              { id: '1', question: 'What is the minimum order quantity?', answer: 'Minimum order is 5kg for retail customers. Wholesale accounts start at 50kg with discounted pricing.' },
+              { id: '2', question: 'Do you deliver all over Pakistan?', answer: 'Yes. We deliver nationwide via TCS and Leopards Courier. Batkhela and Malakand district receive same-day or next-day delivery.' },
+              { id: '3', question: 'Is Cash on Delivery available?', answer: 'Yes. COD is available on all orders. We also accept bank transfer, EasyPaisa, and JazzCash.' },
+            ]).map((faq: any, i: number) => (
+              <div key={faq.id || i} className={`faq-item${openFaq === i ? ' open' : ''}`} onClick={() => setOpenFaq(openFaq === i ? -1 : i)}>
                 <div className="faq-q">
-                  <span>{faq.q}</span>
+                  <span>{faq.question || faq.q}</span>
                   <span className="faq-icon">+</span>
                 </div>
-                <div className="faq-a">{faq.a}</div>
+                <div className="faq-a">{faq.answer || faq.a}</div>
               </div>
             ))}
           </div>
@@ -915,32 +925,6 @@ export default function Store() {
           </Reveal>
         </div>
       </section>
-
-      {/* ═══════════════════════════════════════════════════════════════════════
-          Recently viewed
-          ═══════════════════════════════════════════════════════════════════════ */}
-      {recentlyViewed.length > 0 && (
-        <section style={{ borderTop: '1px solid var(--hairline)', padding: 'clamp(32px, 4vw, 60px) clamp(24px, 5vw, 60px)' }}>
-          <div style={{ maxWidth: 1440, margin: '0 auto' }}>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--mute)', marginBottom: 24 }}>Recently Viewed</p>
-            <div style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'thin' }}>
-              {recentlyViewed.map(p => (
-                <Link key={p.id} to={`/products/${p.id}`}
-                  style={{ flexShrink: 0, width: 160, textDecoration: 'none', color: 'inherit' }}
-                  className="group">
-                  <div style={{ height: 112, background: 'var(--cream-2)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: 10 }}>
-                    {p.imageUrl
-                      ? <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 400ms' }} className="group-hover:scale-105" />
-                      : <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}><Package size={20} style={{ color: 'var(--hairline)' }} /></div>}
-                  </div>
-                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontStyle: 'italic', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</p>
-                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em', color: 'var(--paddy)' }}>₨{p.pricePerKg?.toLocaleString()}/kg</p>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* ═══════════════════════════════════════════════════════════════════════
           Compare floating bar

@@ -35,14 +35,22 @@ const sitemapRoutes = require('./routes/sitemapRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const supplierPortalRoutes = require('./routes/supplierPortalRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const faqRoutes = require('./routes/faqRoutes');
 const { setupSocket } = require('./socket');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve uploaded files as static assets
-app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
+// Serve uploaded files as static assets — CORS headers allow frontend to load images
+app.use('/uploads', express.static(path.join(__dirname, '../../uploads'), {
+  maxAge: '7d',
+  etag: true,
+  setHeaders: (res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  },
+}));
 
 // Rate limit AI endpoint
 const aiLimiter = rateLimit({ windowMs: 60 * 1000, max: 20, message: { message: 'Too many AI requests, slow down.' } });
@@ -76,6 +84,7 @@ app.use('/api/products', recentlyViewedRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/supplier-portal', supplierPortalRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/faq', faqRoutes);
 app.use('/', sitemapRoutes);
 
 app.get('/api/health', (_, res) => res.json({ success: true, version: '3.1', app: 'Al-Noor Rice Mills' }));

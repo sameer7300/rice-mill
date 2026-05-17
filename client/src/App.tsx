@@ -55,6 +55,7 @@ import ContactPage from './pages/shop/ContactPage';
 import CareersPage from './pages/shop/CareersPage';
 import BlogPage from './pages/shop/BlogPage';
 import BlogPostPage from './pages/shop/BlogPostPage';
+import WholesalePage from './pages/shop/WholesalePage';
 
 function ChatWrapper({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -98,6 +99,7 @@ function AppRoutes() {
           <Route path="careers" element={<CareersPage />} />
           <Route path="blog" element={<BlogPage />} />
           <Route path="blog/:slug" element={<BlogPostPage />} />
+          <Route path="wholesale" element={<WholesalePage />} />
           <Route path="compare" element={<ComparePage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
           <Route path="reset-password" element={<ResetPasswordPage />} />

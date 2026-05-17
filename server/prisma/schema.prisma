@@ -506,6 +506,45 @@ model DeliveryNotice {
   supplier      Supplier @relation(fields: [supplierId], references: [id])
 }
 
+// ─── PRICING TIERS ────────────────────────────────────────────────────────────
+
+model PricingTier {
+  id          String   @id @default(cuid())
+  label       String
+  rangeLabel  String
+  discount    String?
+  description String?
+  ctaText     String   @default("Shop now")
+  ctaType     String   @default("link") // link|quote|contact
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model WholesalePageContent {
+  id              String  @id @default(cuid())
+  heroTitle       String  @default("Wholesale & Export")
+  heroSubtitle    String?
+  exportNote      String?
+  testimonialText String?
+  testimonialName String?
+  testimonialRole String?
+  warehouseImage  String?
+  loadingImage    String?
+  updatedAt       DateTime @updatedAt
+}
+
+model FAQ {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // ─── WHOLESALE ────────────────────────────────────────────────────────────────
 
 model WholesaleInquiry {

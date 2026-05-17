@@ -32,9 +32,8 @@ const upload = multer({
 // POST /api/upload  — requires auth (admin/staff)
 router.post('/', auth, upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ success: false, error: 'No file received' });
-  // Build absolute URL so the client can display it without knowing the server origin
-  const origin = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
-  const url = `${origin}/uploads/${req.file.filename}`;
+  // Store relative path only — frontend prepends API base at display time
+  const url = `/uploads/${req.file.filename}`;
   res.json({ success: true, url });
 });
 
