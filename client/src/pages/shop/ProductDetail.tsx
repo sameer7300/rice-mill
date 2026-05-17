@@ -39,6 +39,98 @@ function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
   );
 }
 
+function ProductGallery({ product }: { product: any }) {
+  // Build full image list: gallery array + primary imageUrl as fallback
+  const allImages: string[] = (() => {
+    const gallery: string[] = Array.isArray(product.images) ? product.images : [];
+    const primary = product.imageUrl ? toDisplayUrl(product.imageUrl) : '';
+    // Deduplicate: gallery already contains imageUrl if synced from admin
+    if (gallery.length > 0) return gallery.map(toDisplayUrl);
+    return primary ? [primary] : [DEFAULT_IMG];
+  })();
+
+  const [active, setActive] = useState(0);
+
+  return (
+    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col gap-3">
+      {/* Main image */}
+      <div className="relative rounded-2xl overflow-hidden bg-green-50" style={{ aspectRatio: '4/3' }}>
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={allImages[active]}
+            src={allImages[active]}
+            alt={product.name}
+            className="w-full h-full object-cover"
+            onError={e => { (e.target as any).src = DEFAULT_IMG; }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          />
+        </AnimatePresence>
+
+        {/* Badges */}
+        <div className="absolute top-4 left-4 flex gap-2">
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${GRADE_COLOR[product.grade] || GRADE_COLOR.A}`}>
+            {GRADE_LABEL[product.grade] || product.grade}
+          </span>
+          {!product.inStock && (
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 text-red-700 border border-red-200">Out of Stock</span>
+          )}
+        </div>
+
+        {/* Image counter */}
+        {allImages.length > 1 && (
+          <span className="absolute bottom-3 left-3 text-xs bg-black/50 text-white px-2.5 py-1 rounded-full font-medium">
+            {active + 1} / {allImages.length}
+          </span>
+        )}
+        {product.sku && (
+          <span className="absolute bottom-3 right-3 text-xs bg-black/50 text-white px-2 py-0.5 rounded-full font-mono">{product.sku}</span>
+        )}
+
+        {/* Arrow navigation */}
+        {allImages.length > 1 && (
+          <>
+            <button
+              onClick={() => setActive(i => (i - 1 + allImages.length) % allImages.length)}
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow transition-colors"
+              aria-label="Previous image"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 11L5 7l4-4" stroke="#374151" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            <button
+              onClick={() => setActive(i => (i + 1) % allImages.length)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow transition-colors"
+              aria-label="Next image"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="#374151" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Thumbnails */}
+      {allImages.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {allImages.map((url, i) => (
+            <button
+              key={i}
+              onClick={() => setActive(i)}
+              className={`flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${
+                i === active ? 'border-green-500 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'
+              }`}
+            >
+              <img src={url} alt={`View ${i + 1}`} className="w-full h-full object-cover"
+                onError={e => { (e.target as any).src = DEFAULT_IMG; }} />
+            </button>
+          ))}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const { addItem, items } = useCart();
@@ -180,21 +272,8 @@ export default function ProductDetail() {
 
       {/* Product main */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-10">
-        {/* Image */}
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-          className="relative rounded-2xl overflow-hidden bg-green-50 h-96">
-          <img src={toDisplayUrl(product.imageUrl) || DEFAULT_IMG} alt={product.name} className="w-full h-full object-cover"
-            onError={e => { (e.target as any).src = DEFAULT_IMG; }} />
-          <div className="absolute top-4 left-4 flex gap-2">
-            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${GRADE_COLOR[product.grade] || GRADE_COLOR.A}`}>
-              {GRADE_LABEL[product.grade] || product.grade}
-            </span>
-            {!product.inStock && <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 text-red-700 border border-red-200">Out of Stock</span>}
-          </div>
-          {product.sku && (
-            <span className="absolute bottom-3 right-3 text-xs bg-black/50 text-white px-2 py-0.5 rounded-full font-mono">{product.sku}</span>
-          )}
-        </motion.div>
+        {/* Image gallery */}
+        <ProductGallery product={product} />
 
         {/* Info */}
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">

@@ -272,6 +272,8 @@ model Product {
   shelfLife           String?
   storageInstructions String?
   nutritionInfo       String?
+  // Gallery — JSON array of additional image URLs
+  images              String?
   // SEO
   metaTitle           String?
   metaDescription     String?

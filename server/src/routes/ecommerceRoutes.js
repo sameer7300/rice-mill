@@ -41,7 +41,7 @@ router.get('/products', auth, requireRole('admin'), async (req, res) => {
 
 router.post('/products', auth, requireRole('admin'), async (req, res) => {
   try {
-    const { name, variety, grade, description, imageUrl, pricePerKg, minOrderKg, maxOrderKg,
+    const { name, variety, grade, description, imageUrl, images, pricePerKg, minOrderKg, maxOrderKg,
             isPublished, tags, riceStockId, sortOrder, sku: providedSku,
             weight, packaging, origin, processingType, moistureContent, grainLength,
             cookingTime, aroma, brokenGrain, certifications, shelfLife,
@@ -57,10 +57,13 @@ router.post('/products', auth, requireRole('admin'), async (req, res) => {
       if (existing) return res.status(400).json({ success: false, error: `SKU "${finalSku}" already exists` });
     }
 
+    const imagesJson = Array.isArray(images) ? JSON.stringify(images) : (images || null);
+
     const product = await prisma.product.create({
       data: {
         name, variety: variety || name, grade: grade || 'A', sku: finalSku,
-        description, imageUrl, pricePerKg: parseFloat(pricePerKg),
+        description, imageUrl, images: imagesJson,
+        pricePerKg: parseFloat(pricePerKg),
         minOrderKg: parseFloat(minOrderKg || 10),
         maxOrderKg: maxOrderKg ? parseFloat(maxOrderKg) : null,
         isPublished: Boolean(isPublished), tags, riceStockId: riceStockId || null,
@@ -76,15 +79,16 @@ router.post('/products', auth, requireRole('admin'), async (req, res) => {
 
 router.put('/products/:id', auth, requireRole('admin'), async (req, res) => {
   try {
-    const { name, variety, grade, description, imageUrl, pricePerKg, minOrderKg, maxOrderKg,
+    const { name, variety, grade, description, imageUrl, images, pricePerKg, minOrderKg, maxOrderKg,
             isPublished, inStock, tags, riceStockId, sortOrder,
             weight, packaging, origin, processingType, moistureContent, grainLength,
             cookingTime, aroma, brokenGrain, certifications, shelfLife,
             storageInstructions, nutritionInfo } = req.body;
+    const imagesJson = Array.isArray(images) ? JSON.stringify(images) : (images || null);
     const product = await prisma.product.update({
       where: { id: req.params.id },
       data: {
-        name, variety, grade, description, imageUrl,
+        name, variety, grade, description, imageUrl, images: imagesJson,
         pricePerKg: parseFloat(pricePerKg),
         minOrderKg: parseFloat(minOrderKg || 10),
         maxOrderKg: maxOrderKg ? parseFloat(maxOrderKg) : null,

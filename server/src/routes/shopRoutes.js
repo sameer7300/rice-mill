@@ -8,6 +8,11 @@ const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STR
 const router = express.Router();
 const prisma = new PrismaClient();
 
+const parseImages = (v) => {
+  if (!v) return [];
+  try { return JSON.parse(v); } catch { return []; }
+};
+
 function generateOrderNumber() {
   const now = new Date();
   return `ORD-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${Math.floor(Math.random() * 90000 + 10000)}`;
@@ -73,6 +78,7 @@ router.get('/products', async (req, res) => {
 
     const enriched = products.map(p => ({
       ...p,
+      images: parseImages(p.images),
       availableKg: p.riceStock?.quantityKg || 0,
       inStock: p.inStock && (p.riceStock ? p.riceStock.quantityKg > 0 : true),
       reviewCount: p._count?.reviews || 0
@@ -105,7 +111,7 @@ router.get('/products/:id', async (req, res) => {
       include: { riceStock: { select: { quantityKg: true } } }
     });
     if (!product || !product.isPublished) return res.status(404).json({ message: 'Product not found' });
-    res.json({ ...product, availableKg: product.riceStock?.quantityKg || 0 });
+    res.json({ ...product, images: parseImages(product.images), availableKg: product.riceStock?.quantityKg || 0 });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }

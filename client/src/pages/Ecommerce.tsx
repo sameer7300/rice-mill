@@ -10,6 +10,7 @@ import { formatPKR, formatDate } from '../utils/export';
 import { OrderStatusBadge } from '../components/ui/Badge';
 import PageTransition from '../components/PageTransition';
 import ImageUpload from '../components/ui/ImageUpload';
+import MultiImageUpload from '../components/ui/MultiImageUpload';
 
 const TABS = ['overview', 'products', 'discounts', 'email', 'settings', 'pricing-tiers', 'faqs'] as const;
 type Tab = typeof TABS[number];
@@ -25,7 +26,7 @@ export default function Ecommerce() {
   const [showProduct, setShowProduct] = useState<any>(null); // null=closed, {}=new, {...}=edit
   const [showDiscount, setShowDiscount] = useState(false);
   const EMPTY_PRODUCT = {
-    name: '', variety: '', grade: 'A', sku: '', description: '', imageUrl: '',
+    name: '', variety: '', grade: 'A', sku: '', description: '', imageUrl: '', images: [] as string[],
     pricePerKg: '', minOrderKg: '10', isPublished: false, inStock: true,
     riceStockId: '', sortOrder: '0',
     // Specifications
@@ -171,6 +172,7 @@ export default function Ecommerce() {
     setProductForm({
       name: p.name, variety: p.variety, grade: p.grade, sku: p.sku || '',
       description: p.description || '', imageUrl: p.imageUrl || '',
+      images: Array.isArray(p.images) ? p.images : (p.images ? (() => { try { return JSON.parse(p.images); } catch { return []; } })() : []),
       pricePerKg: String(p.pricePerKg), minOrderKg: String(p.minOrderKg),
       isPublished: p.isPublished, inStock: p.inStock,
       riceStockId: p.riceStockId || '', sortOrder: String(p.sortOrder || 0),
@@ -713,7 +715,10 @@ export default function Ecommerce() {
                   </FormField>
                 </div>
                 <FormField label="Description"><textarea value={productForm.description} onChange={e => setProductForm((f: any) => ({ ...f, description: e.target.value }))} rows={2} className={inputCls} /></FormField>
-                <ImageUpload value={productForm.imageUrl} onChange={url => setProductForm((f: any) => ({ ...f, imageUrl: url }))} label="Product Image" hint="Displayed on storefront product cards and detail page" />
+                <MultiImageUpload
+                  images={productForm.images?.length ? productForm.images : (productForm.imageUrl ? [productForm.imageUrl] : [])}
+                  onChange={urls => setProductForm((f: any) => ({ ...f, images: urls, imageUrl: urls[0] || '' }))}
+                />
                 <div className="flex gap-5">
                   <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={productForm.isPublished} onChange={e => setProductForm((f: any) => ({ ...f, isPublished: e.target.checked }))} className="w-4 h-4 accent-green-600" /><span className="font-medium text-gray-700">Published</span></label>
                   <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={productForm.inStock} onChange={e => setProductForm((f: any) => ({ ...f, inStock: e.target.checked }))} className="w-4 h-4 accent-blue-600" /><span className="font-medium text-gray-700">In Stock</span></label>
