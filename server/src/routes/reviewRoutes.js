@@ -34,6 +34,33 @@ router.delete('/:id/mine', auth, async (req, res) => {
   }
 });
 
+// GET /api/reviews/featured — public, top 3 approved reviews for homepage
+router.get('/featured', async (req, res) => {
+  try {
+    const reviews = await prisma.review.findMany({
+      where: { status: 'approved', comment: { not: null } },
+      include: {
+        user: {
+          select: {
+            name: true,
+            addresses: {
+              where: { isDefault: true },
+              select: { city: true },
+              take: 1,
+            },
+          },
+        },
+        product: { select: { name: true, variety: true } },
+      },
+      orderBy: { helpfulCount: 'desc' },
+      take: 3,
+    });
+    res.json({ reviews });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // GET /api/reviews/:productId — public, approved only
 router.get('/:productId', async (req, res) => {
   try {

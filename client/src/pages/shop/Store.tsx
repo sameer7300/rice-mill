@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useCart } from '../../contexts/CartContext';
 import api from '../../api';
 import toast from 'react-hot-toast';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion, useMotionValue, useTransform, animate } from 'framer-motion';
 import {
   staggerContainer, staggerItem, staggerFast, scrollReveal,
   scrollRevealLeft, scrollRevealRight, cardHover, buttonTap,
@@ -21,12 +21,12 @@ const GRADE_LABEL: Record<string, string> = { A: 'Premium', B: 'Standard', C: 'E
 const GRADE_COLOR: Record<string, string> = {
   A: 'bg-yellow-100 text-yellow-700 border-yellow-200',
   B: 'bg-blue-100 text-blue-700 border-blue-200',
-  C: 'bg-gray-100 text-gray-600 border-gray-200'
+  C: 'bg-gray-100 text-gray-600 border-gray-200',
 };
 const PLACEHOLDER_IMAGES: Record<string, string> = {
   Basmati: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&q=80',
   'Super Kernel': 'https://images.unsplash.com/photo-1568347877321-f8935c7dc5f7?w=400&q=80',
-  default: 'https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?w=400&q=80'
+  default: 'https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?w=400&q=80',
 };
 const SORT_OPTIONS = [
   { value: '', label: 'Featured' },
@@ -35,11 +35,101 @@ const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest First' },
 ];
 
+// ── Mill SVG illustration ──────────────────────────────────────────────────────
+function MillSVG() {
+  return (
+    <svg viewBox="0 0 360 280" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      {/* Stars */}
+      <circle cx="40" cy="35" r="1.5" fill="rgba(255,255,255,0.3)" />
+      <circle cx="70" cy="22" r="1" fill="rgba(255,255,255,0.25)" />
+      <circle cx="120" cy="45" r="1.5" fill="rgba(255,255,255,0.2)" />
+      <circle cx="220" cy="30" r="1" fill="rgba(255,255,255,0.25)" />
+      <circle cx="265" cy="18" r="1.5" fill="rgba(255,255,255,0.3)" />
+      <circle cx="310" cy="40" r="1" fill="rgba(255,255,255,0.2)" />
+      {/* Moon */}
+      <path d="M 335 58 A 15 15 0 1 1 322 35 A 10 10 0 0 0 335 58 Z" fill="rgba(255,255,255,0.08)" />
+      {/* Background hills */}
+      <ellipse cx="88" cy="248" rx="110" ry="28" fill="rgba(255,255,255,0.03)" />
+      <ellipse cx="285" cy="252" rx="95" ry="22" fill="rgba(255,255,255,0.03)" />
+      {/* Building body */}
+      <rect x="100" y="140" width="160" height="112" rx="3" fill="rgba(255,255,255,0.07)" />
+      {/* Roof */}
+      <polygon points="82,142 180,82 278,142" fill="rgba(255,255,255,0.10)" />
+      <line x1="82" y1="142" x2="278" y2="142" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
+      {/* Chimney */}
+      <rect x="220" y="94" width="16" height="48" rx="1" fill="rgba(255,255,255,0.08)" />
+      {/* Smoke */}
+      <circle cx="228" cy="85" r="8" fill="rgba(255,255,255,0.05)" />
+      <circle cx="224" cy="72" r="6" fill="rgba(255,255,255,0.04)" />
+      <circle cx="230" cy="61" r="4.5" fill="rgba(255,255,255,0.03)" />
+      {/* Arched door */}
+      <path d="M 155 252 L 155 212 Q 155 200 165 200 L 195 200 Q 205 200 205 212 L 205 252 Z" fill="rgba(255,255,255,0.12)" />
+      {/* Windows */}
+      <rect x="110" y="158" width="42" height="32" rx="4" fill="rgba(255,255,255,0.10)" />
+      <rect x="208" y="158" width="42" height="32" rx="4" fill="rgba(255,255,255,0.10)" />
+      {/* Window panes */}
+      <line x1="131" y1="158" x2="131" y2="190" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+      <line x1="110" y1="174" x2="152" y2="174" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+      <line x1="229" y1="158" x2="229" y2="190" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+      <line x1="208" y1="174" x2="250" y2="174" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+      {/* Gear symbol */}
+      <circle cx="180" cy="163" r="14" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" fill="none" />
+      <circle cx="180" cy="163" r="7" fill="rgba(255,255,255,0.07)" />
+      <circle cx="180" cy="149" r="2.5" fill="rgba(255,255,255,0.15)" />
+      <circle cx="180" cy="177" r="2.5" fill="rgba(255,255,255,0.15)" />
+      <circle cx="166" cy="163" r="2.5" fill="rgba(255,255,255,0.15)" />
+      <circle cx="194" cy="163" r="2.5" fill="rgba(255,255,255,0.15)" />
+      {/* Labels */}
+      <text x="180" y="122" textAnchor="middle" fill="rgba(255,255,255,0.20)" fontSize="7" fontFamily="system-ui,sans-serif" letterSpacing="2">AL-NOOR RICE MILLS</text>
+      <text x="180" y="132" textAnchor="middle" fill="rgba(255,255,255,0.14)" fontSize="6" fontFamily="system-ui,sans-serif" letterSpacing="1">EST. 2010 · BATKHELA, KPK</text>
+      {/* Ground */}
+      <line x1="20" y1="252" x2="340" y2="252" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+      <rect x="20" y="252" width="320" height="28" fill="rgba(255,255,255,0.04)" rx="2" />
+      {/* Left tree */}
+      <ellipse cx="52" cy="226" rx="24" ry="30" fill="rgba(255,255,255,0.06)" />
+      <rect x="47" y="240" width="10" height="20" fill="rgba(255,255,255,0.05)" />
+      {/* Right tree */}
+      <ellipse cx="313" cy="229" rx="22" ry="26" fill="rgba(255,255,255,0.06)" />
+      <rect x="308" y="242" width="10" height="18" fill="rgba(255,255,255,0.05)" />
+      {/* Wheat stalks */}
+      <g stroke="rgba(255,255,255,0.22)" strokeWidth="1.5" fill="none">
+        <path d="M72 252 L72 228 M67 238 Q72 233 72 228 M77 236 Q72 233 72 228" />
+        <path d="M80 252 L80 234 M75 243 Q80 239 80 234 M85 241 Q80 239 80 234" />
+        <path d="M288 252 L288 232 M283 242 Q288 238 288 232 M293 240 Q288 238 288 232" />
+        <path d="M296 252 L296 237 M291 246 Q296 242 296 237 M301 244 Q296 242 296 237" />
+      </g>
+    </svg>
+  );
+}
+
+// ── Animated counter for stats strip ──────────────────────────────────────────
+function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
+  const count = useMotionValue(0);
+  const display = useTransform(count, v => Math.floor(v).toLocaleString());
+  const triggered = useRef(false);
+  return (
+    <motion.span
+      onViewportEnter={() => {
+        if (!triggered.current) {
+          triggered.current = true;
+          animate(count, target, { duration: 1.8, ease: 'easeOut' });
+        }
+      }}
+      viewport={{ once: true, margin: '-50px' }}
+    >
+      <motion.span>{display}</motion.span>{suffix}
+    </motion.span>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
 export default function Store() {
   const shouldReduce = useReducedMotion();
   const { addItem, items } = useCart();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const howItWorksRef = useRef<HTMLElement>(null);
+
   const [products, setProducts] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [settings, setSettings] = useState<any>({});
@@ -49,6 +139,8 @@ export default function Store() {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [recentlyViewed, setRV] = useState<any[]>([]);
+  const [testimonials, setTestimonials] = useState<any[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
 
   // Filter state synced with URL params
   const search = searchParams.get('q') || '';
@@ -64,12 +156,11 @@ export default function Store() {
   const setParam = (key: string, value: string) => {
     const p = new URLSearchParams(searchParams);
     if (value) p.set(key, value); else p.delete(key);
-    p.delete('page'); // reset page on filter change
+    p.delete('page');
     setSearchParams(p);
   };
 
   const clearAll = () => setSearchParams(new URLSearchParams());
-
   const hasActiveFilters = !!(grade || variety || minPrice || maxPrice || inStockOnly || minOrder || search);
 
   const fetchProducts = useCallback(async () => {
@@ -86,36 +177,58 @@ export default function Store() {
       if (sortBy) params.set('sortBy', sortBy);
       params.set('page', String(page));
       params.set('limit', '12');
-
       const res = await api.get(`/shop/products?${params}`);
-      // Handle both old array response and new paginated response
       const data = res.data;
       if (Array.isArray(data)) {
-        setProducts(data);
-        setTotal(data.length);
+        setProducts(data); setTotal(data.length);
       } else {
-        setProducts(data.products || []);
-        setTotal(data.total || 0);
+        setProducts(data.products || []); setTotal(data.total || 0);
       }
       const qty: Record<string, number> = {};
       const prods = Array.isArray(data) ? data : (data.products || []);
       prods.forEach((pr: any) => { qty[pr.id] = pr.minOrderKg || 10; });
       setQuantities(q => ({ ...q, ...qty }));
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }, [search, grade, variety, minPrice, maxPrice, inStockOnly, minOrder, sortBy, page]);
 
   useEffect(() => {
     fetchProducts();
     api.get('/shop/settings').then(r => setSettings(r.data)).catch(() => {});
     api.get('/shop/varieties').then(r => setVarieties(r.data || [])).catch(() => {});
-    const sessionId = localStorage.getItem('sessionId') || (() => { const s = Math.random().toString(36).slice(2); localStorage.setItem('sessionId', s); return s; })();
-    api.get('/products/recently-viewed', { headers: { 'X-Session-ID': sessionId } }).then(r => setRV(r.data.data || [])).catch(() => {});
+    const sessionId = localStorage.getItem('sessionId') || (() => {
+      const s = Math.random().toString(36).slice(2);
+      localStorage.setItem('sessionId', s);
+      return s;
+    })();
+    api.get('/products/recently-viewed', { headers: { 'X-Session-ID': sessionId } })
+      .then(r => setRV(r.data.data || [])).catch(() => {});
   }, [fetchProducts]);
 
+  // One-time fetches for static sections
+  useEffect(() => {
+    api.get('/reviews/featured').then(r => setTestimonials(r.data.reviews || [])).catch(() => {});
+    api.get('/shop/products?limit=12').then(r => {
+      const data = r.data;
+      const prods: any[] = Array.isArray(data) ? data : (data.products || []);
+      // Pick up to 3 products preferring different varieties
+      const seen = new Set<string>();
+      const featured: any[] = [];
+      for (const p of prods) {
+        if (!seen.has(p.variety)) { seen.add(p.variety); featured.push(p); }
+        if (featured.length >= 3) break;
+      }
+      setFeaturedProducts(featured.length >= 3 ? featured : prods.slice(0, 3));
+    }).catch(() => {});
+  }, []);
+
   const toggleCompare = (id: string) => {
-    setCompareIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : prev.length >= 4 ? (toast.error('Max 4 products to compare'), prev) : [...prev, id]);
+    setCompareIds(prev =>
+      prev.includes(id)
+        ? prev.filter(x => x !== id)
+        : prev.length >= 4
+          ? (toast.error('Max 4 products to compare'), prev)
+          : [...prev, id]
+    );
   };
 
   const handleAddToCart = (product: any) => {
@@ -128,6 +241,12 @@ export default function Store() {
   const formatPKR = (n: number) => `PKR ${n.toLocaleString()}`;
   const imgSrc = (p: any) => p.imageUrl || PLACEHOLDER_IMAGES[p.variety] || PLACEHOLDER_IMAGES.default;
 
+  const getDisplayName = (name: string) => {
+    const parts = (name || 'Customer').trim().split(/\s+/);
+    if (parts.length === 1) return parts[0];
+    return `${parts[0]} ${parts[parts.length - 1][0]}.`;
+  };
+
   return (
     <PageTransition>
     <div>
@@ -138,95 +257,136 @@ export default function Store() {
         <meta property="og:description" content="Premium Basmati & Super Kernel rice, freshly milled in Batkhela, KPK." />
         <meta name="keywords" content="Pakistani rice, Basmati rice, Super Kernel rice, Al-Noor Rice Mills, Batkhela, KPK, buy rice online Pakistan" />
       </Helmet>
-      {/* ── HERO ──────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden min-h-[80vh] flex items-center" style={{ background: 'radial-gradient(ellipse at 30% 50%, #14532d 0%, #166534 45%, #15803d 100%)' }}>
+
+      {/* ── HERO ─────────────────────────────────────────────────────────────── */}
+      <section
+        className="relative overflow-hidden min-h-[70vh] md:min-h-[90vh] flex items-center"
+        style={{ background: 'radial-gradient(ellipse at 30% 50%, #14532d 0%, #166534 45%, #15803d 100%)' }}>
+
+        {/* Grain texture overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.035]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+            backgroundSize: '200px 200px',
+          }}
+        />
+
         {/* Floating grain particles */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="absolute text-4xl opacity-5 select-none"
-              style={{ left: `${(i * 19 + 5) % 100}%`, top: `${(i * 23 + 10) % 100}%`, animation: `float${i % 3} ${6 + i * 0.5}s ease-in-out infinite` }}>
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute text-3xl opacity-[0.06] select-none"
+              style={{
+                left: `${(i * 19 + 5) % 95}%`,
+                top: `${(i * 23 + 8) % 88}%`,
+                animation: `heroFloat${i % 3} ${6 + i * 0.5}s ease-in-out infinite`,
+              }}>
               🌾
             </div>
           ))}
         </div>
         <style>{`
-          @keyframes float0 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
-          @keyframes float1 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-          @keyframes float2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-16px)} }
+          @keyframes heroFloat0 { 0%,100%{transform:translateY(0) rotate(-3deg)} 50%{transform:translateY(-14px) rotate(3deg)} }
+          @keyframes heroFloat1 { 0%,100%{transform:translateY(0) rotate(2deg)} 50%{transform:translateY(-9px) rotate(-2deg)} }
+          @keyframes heroFloat2 { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-18px) rotate(1deg)} }
         `}</style>
 
-        <div className="relative max-w-6xl mx-auto px-4 py-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* Left content */}
+        <div className="relative max-w-6xl mx-auto px-4 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center w-full">
+
+          {/* Left — headline & CTAs */}
           <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
-            <motion.span initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+            <motion.span
+              initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
               className="inline-flex items-center gap-1.5 bg-white/15 text-white text-xs font-semibold px-3 py-1.5 rounded-full mb-6 border border-white/25 backdrop-blur-sm">
               <Leaf size={11} className="text-amber-300" /> Premium Rice Mill Since 2010 · Batkhela, KPK
             </motion.span>
 
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-5">
-              <motion.span initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="block">Pure Rice,</motion.span>
-              <motion.span initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="block">Direct From</motion.span>
-              <motion.span initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="block text-amber-400">Our Mill</motion.span>
+            <h1 className="text-4xl md:text-5xl lg:text-[3.5rem] font-extrabold text-white leading-[1.1] mb-5">
+              <motion.span
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                className="block whitespace-nowrap">
+                Fresh from
+              </motion.span>
+              <motion.span
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+                className="block whitespace-nowrap">
+                Batkhela's Mill
+              </motion.span>
+              <motion.span
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+                className="block text-amber-400 whitespace-nowrap">
+                To Your Kitchen
+              </motion.span>
             </h1>
 
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
-              className="text-green-200 text-lg leading-relaxed mb-8 max-w-lg">
-              {settings.bannerSubtitle || 'Basmati · Super Kernel · IRRI varieties, freshly milled in Batkhela and delivered across Pakistan.'}
+            <motion.p
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
+              className="text-green-200 text-base md:text-lg leading-relaxed mb-8 max-w-lg">
+              Premium Basmati • Super Kernel • IRRI varieties<br />
+              Milled fresh in Batkhela, Malakand. Delivered across Pakistan.
             </motion.p>
 
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
               className="flex flex-wrap gap-3 mb-8">
-              <motion.a href="#products" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              <motion.a
+                href="#products"
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 className="flex items-center gap-2 px-7 py-3.5 bg-amber-400 hover:bg-amber-300 text-green-900 font-bold rounded-xl transition-colors shadow-lg text-sm">
-                Shop Now <ChevronRight size={16} />
+                Shop Rice <ChevronRight size={16} />
               </motion.a>
-              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                <Link to="/about" className="flex items-center gap-2 px-7 py-3.5 bg-white/15 hover:bg-white/25 text-white font-semibold rounded-xl transition-colors border border-white/30 text-sm backdrop-blur-sm">
-                  Our Story
-                </Link>
-              </motion.div>
+              <motion.button
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                onClick={() => howItWorksRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                className="flex items-center gap-2 px-7 py-3.5 bg-white/15 hover:bg-white/25 text-white font-semibold rounded-xl transition-colors border border-white/30 text-sm backdrop-blur-sm">
+                How We Mill ↓
+              </motion.button>
             </motion.div>
 
-            <div className="flex items-center gap-5 text-xs text-green-300">
+            <div className="flex flex-wrap items-center gap-5 text-xs text-green-300">
               <span className="flex items-center gap-1.5"><CheckCircle2 size={13} className="text-green-400" /> Fast Delivery</span>
               <span className="flex items-center gap-1.5"><Shield size={13} className="text-green-400" /> Quality Guaranteed</span>
               <span className="flex items-center gap-1.5"><Award size={13} className="text-green-400" /> Freshly Milled</span>
             </div>
           </motion.div>
 
-          {/* Right: Floating product showcase */}
-          <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
-            className="hidden lg:flex justify-center">
-            <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-              className="w-72 rounded-3xl overflow-hidden shadow-2xl"
-              style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.2)' }}>
-              <div className="h-44 bg-green-800/50 flex items-center justify-center overflow-hidden">
-                {products[0]?.imageUrl
-                  ? <img src={products[0].imageUrl} alt={products[0].name} className="w-full h-full object-cover" />
-                  : <div className="text-6xl opacity-60">🌾</div>}
-              </div>
-              <div className="p-5 text-white">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs bg-amber-400 text-green-900 px-2 py-0.5 rounded-full font-bold">New Harvest 2025</span>
-                  <span className="flex items-center gap-0.5 text-xs text-green-300">
-                    <span className="text-amber-400">★★★★★</span>
-                  </span>
-                </div>
-                <p className="font-bold text-lg">{products[0]?.name || 'Premium Basmati Rice'}</p>
-                <p className="text-green-300 text-sm">{products[0]?.variety || 'Basmati'} · Grade A</p>
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/20">
-                  <span className="text-2xl font-extrabold text-amber-400">
-                    {products[0] ? formatPKR(products[0].pricePerKg) : 'PKR 280'}
-                  </span>
-                  <span className="text-xs text-green-300">/kg · Min 5kg</span>
-                </div>
-              </div>
-            </motion.div>
+          {/* Right — Mill SVG + 3-step glassmorphism cards */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
+            className="hidden lg:block relative min-h-[320px]">
+            {/* Background mill illustration */}
+            <div className="absolute inset-0 flex items-end justify-center opacity-60 pointer-events-none pb-4">
+              <MillSVG />
+            </div>
+            {/* 3-step process cards */}
+            <div className="relative z-10 flex flex-col gap-4 py-10 pl-8 pr-2">
+              {[
+                { icon: '🌾', label: 'Paddy Procured', desc: 'Directly from Malakand valley farmers' },
+                { icon: '⚙️', label: 'Milled & Graded', desc: 'Processed in our Batkhela facility' },
+                { icon: '📦', label: 'Packed & Shipped', desc: 'To your door across Pakistan' },
+              ].map((step, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.55 + i * 0.15, duration: 0.5 }}
+                  className="flex items-center gap-4 rounded-2xl p-4 bg-white/10 backdrop-blur-md border border-white/20">
+                  <div className="w-12 h-12 bg-white/15 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
+                    {step.icon}
+                  </div>
+                  <div>
+                    <p className="font-bold text-white text-sm leading-tight">{step.label}</p>
+                    <p className="text-green-200 text-xs mt-0.5">{step.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
         </div>
       </section>
 
-      {/* ── TRUST STATS ──────────────────────────────────────────────── */}
+      {/* ── TRUST STATS ──────────────────────────────────────────────────────── */}
       <section className="bg-white border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-4 py-6">
           <motion.div
@@ -254,18 +414,64 @@ export default function Store() {
         </div>
       </section>
 
-      {/* Products section */}
+      {/* ── TESTIMONIALS ─────────────────────────────────────────────────────── */}
+      {testimonials.length >= 3 && (
+        <section className="bg-gray-50 py-16">
+          <div className="max-w-6xl mx-auto px-4">
+            <motion.div variants={scrollReveal} initial="initial" whileInView="animate" viewport={viewportOnce}
+              className="text-center mb-10">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">What Our Customers Say</h2>
+              <p className="text-gray-500 text-sm">All reviews are from verified buyers</p>
+            </motion.div>
+            <motion.div variants={staggerContainer} initial="initial" whileInView="animate" viewport={viewportOnce}
+              className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {testimonials.slice(0, 3).map((review: any) => {
+                const city = review.user?.addresses?.[0]?.city;
+                const displayName = getDisplayName(review.user?.name || 'Customer');
+                const comment = review.comment || '';
+                return (
+                  <motion.div key={review.id} variants={staggerItem} {...cardHover}
+                    className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col">
+                    <div className="flex gap-0.5 mb-3">
+                      {[1, 2, 3, 4, 5].map(s => (
+                        <span key={s} className={`text-lg ${s <= review.rating ? 'text-amber-400' : 'text-gray-200'}`}>★</span>
+                      ))}
+                    </div>
+                    <p className="text-gray-700 text-sm leading-relaxed mb-4 italic flex-1">
+                      "{comment.length > 120 ? comment.slice(0, 120) + '…' : comment}"
+                    </p>
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                      <div>
+                        <p className="font-semibold text-gray-900 text-sm">
+                          — {displayName}{city ? `, ${city}` : ''}
+                        </p>
+                        {review.product?.name && (
+                          <p className="text-xs text-gray-400 mt-0.5">{review.product.name}</p>
+                        )}
+                      </div>
+                      {review.verifiedPurchase && (
+                        <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-1 rounded-full border border-green-200 flex-shrink-0">
+                          <CheckCircle2 size={11} /> Verified
+                        </span>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          </div>
+        </section>
+      )}
+
+      {/* ── PRODUCTS ─────────────────────────────────────────────────────────── */}
       <section id="products" className="max-w-6xl mx-auto px-4 py-12">
         {/* Filter toolbar */}
         <div className="flex flex-wrap items-center gap-3 mb-5">
-          {/* Search */}
           <div className="relative flex-1 min-w-48">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input type="text" value={search} onChange={e => setParam('q', e.target.value)}
               placeholder="Search rice..." className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
           </div>
-
-          {/* Grade */}
           <select value={grade} onChange={e => setParam('grade', e.target.value)}
             className="px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500">
             <option value="">All Grades</option>
@@ -273,8 +479,6 @@ export default function Store() {
             <option value="B">Standard (B)</option>
             <option value="C">Economy (C)</option>
           </select>
-
-          {/* Variety */}
           {varieties.length > 0 && (
             <select value={variety} onChange={e => setParam('variety', e.target.value)}
               className="px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500">
@@ -282,19 +486,14 @@ export default function Store() {
               {varieties.map(v => <option key={v}>{v}</option>)}
             </select>
           )}
-
-          {/* Sort */}
           <select value={sortBy} onChange={e => setParam('sort', e.target.value)}
             className="px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500">
             {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
-
-          {/* More filters toggle */}
           <button onClick={() => setFiltersOpen(f => !f)}
             className={`flex items-center gap-1.5 px-3 py-2 border rounded-xl text-sm font-medium transition-colors ${filtersOpen ? 'bg-green-700 text-white border-green-700' : 'border-gray-200 text-gray-600 hover:border-green-400'}`}>
             <SlidersHorizontal size={14} /> More Filters {filtersOpen ? <ChevronDown size={12} className="rotate-180" /> : <ChevronDown size={12} />}
           </button>
-
           {hasActiveFilters && (
             <button onClick={clearAll} className="flex items-center gap-1 text-sm text-red-500 hover:text-red-700 font-medium">
               <X size={14} /> Clear All
@@ -302,7 +501,6 @@ export default function Store() {
           )}
         </div>
 
-        {/* Expanded filters */}
         {filtersOpen && (
           <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 mb-5 grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
@@ -336,7 +534,6 @@ export default function Store() {
           </div>
         )}
 
-        {/* Active filter chips */}
         {hasActiveFilters && (
           <div className="flex flex-wrap gap-2 mb-4">
             {search && <FilterChip label={`Search: "${search}"`} onRemove={() => setParam('q', '')} />}
@@ -350,7 +547,7 @@ export default function Store() {
         )}
 
         {/* Category pills */}
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-5 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-5" style={{ scrollbarWidth: 'none' }}>
           {[
             { label: 'All', q: {}, active: !variety && !grade },
             { label: 'Basmati', q: { variety: 'Basmati' }, active: variety === 'Basmati' },
@@ -402,80 +599,74 @@ export default function Store() {
               animate="animate"
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <AnimatePresence mode="popLayout">
-              {products.map((product) => (
-                <motion.div key={product.id}
-                  variants={staggerItem}
-                  layout
-                  {...(shouldReduce ? {} : cardHover)}
-                  className={`bg-white rounded-2xl overflow-hidden shadow-sm border transition-all ${!product.inStock ? 'opacity-70' : 'border-gray-100'}`}>
-                  {/* Image */}
-                  <Link to={`/products/${product.id}`} className="block relative h-52 overflow-hidden bg-green-50">
-                    <img src={imgSrc(product)} alt={product.name}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                      onError={e => { (e.target as any).src = PLACEHOLDER_IMAGES.default; }} />
-                    <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap">
-                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${GRADE_COLOR[product.grade] || GRADE_COLOR.A}`}>
-                        {GRADE_LABEL[product.grade] || product.grade}
-                      </span>
-                      {!product.inStock && <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 text-red-700 border border-red-200">Out of Stock</span>}
-                    </div>
-                    {product.availableKg > 0 && product.availableKg < 100 && product.inStock && (
-                      <span className="absolute top-3 right-3 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold border border-orange-200">
-                        Only {product.availableKg}kg left
-                      </span>
-                    )}
-                    {/* New badge */}
-                    {new Date(product.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) && (
-                      <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                        <span className="w-1.5 h-1.5 bg-green-300 rounded-full animate-pulse" /> New
+                {products.map(product => (
+                  <motion.div key={product.id} variants={staggerItem} layout
+                    {...(shouldReduce ? {} : cardHover)}
+                    className={`bg-white rounded-2xl overflow-hidden shadow-sm border transition-all ${!product.inStock ? 'opacity-70' : 'border-gray-100'}`}>
+                    <Link to={`/products/${product.id}`} className="block relative h-52 overflow-hidden bg-green-50">
+                      <img src={imgSrc(product)} alt={product.name}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                        onError={e => { (e.target as any).src = PLACEHOLDER_IMAGES.default; }} />
+                      <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap">
+                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${GRADE_COLOR[product.grade] || GRADE_COLOR.A}`}>
+                          {GRADE_LABEL[product.grade] || product.grade}
+                        </span>
+                        {!product.inStock && <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 text-red-700 border border-red-200">Out of Stock</span>}
                       </div>
-                    )}
-                  </Link>
-                  {/* Info */}
-                  <div className="p-4">
-                    <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">{product.variety}</span>
-                    <Link to={`/products/${product.id}`} className="font-bold text-gray-900 text-base hover:text-green-700 transition-colors block mt-2 mb-1 leading-snug line-clamp-2">{product.name}</Link>
-                    {product.reviewCount > 0 && (
-                      <div className="flex items-center gap-1 mb-2">
-                        <div className="flex">{[1,2,3,4,5].map(s => <span key={s} className={`text-xs ${s <= Math.round(product.rating || 0) ? 'text-amber-400' : 'text-gray-200'}`}>★</span>)}</div>
-                        <span className="text-xs text-gray-400">({product.reviewCount})</span>
+                      {product.availableKg > 0 && product.availableKg < 100 && product.inStock && (
+                        <span className="absolute top-3 right-3 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold border border-orange-200">
+                          Only {product.availableKg}kg left
+                        </span>
+                      )}
+                      {new Date(product.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) && (
+                        <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                          <span className="w-1.5 h-1.5 bg-green-300 rounded-full animate-pulse" /> New
+                        </div>
+                      )}
+                    </Link>
+                    <div className="p-4">
+                      <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">{product.variety}</span>
+                      <Link to={`/products/${product.id}`} className="font-bold text-gray-900 text-base hover:text-green-700 transition-colors block mt-2 mb-1 leading-snug line-clamp-2">{product.name}</Link>
+                      {product.reviewCount > 0 && (
+                        <div className="flex items-center gap-1 mb-2">
+                          <div className="flex">{[1,2,3,4,5].map(s => <span key={s} className={`text-xs ${s <= Math.round(product.rating || 0) ? 'text-amber-400' : 'text-gray-200'}`}>★</span>)}</div>
+                          <span className="text-xs text-gray-400">({product.reviewCount})</span>
+                        </div>
+                      )}
+                      <div className="flex items-end justify-between mb-3">
+                        <div>
+                          <span className="text-2xl font-extrabold text-green-700">{formatPKR(product.pricePerKg)}</span>
+                          <span className="text-gray-400 text-xs ml-1">/kg</span>
+                        </div>
+                        <p className="text-xs text-gray-400">Min. {product.minOrderKg}kg</p>
                       </div>
-                    )}
-                    <div className="flex items-end justify-between mb-3">
-                      <div>
-                        <span className="text-2xl font-extrabold text-green-700">{formatPKR(product.pricePerKg)}</span>
-                        <span className="text-gray-400 text-xs ml-1">/kg</span>
+                      <div className="flex items-center gap-2 mb-2">
+                        <motion.button whileTap={{ scale: 0.9 }}
+                          onClick={() => setQuantities(q => ({ ...q, [product.id]: Math.max(product.minOrderKg, (q[product.id] || product.minOrderKg) - 5) }))}
+                          className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg font-bold transition-colors flex items-center justify-center text-gray-600">−</motion.button>
+                        <span className="flex-1 text-center text-sm font-semibold">{quantities[product.id] || product.minOrderKg} kg</span>
+                        <motion.button whileTap={{ scale: 0.9 }}
+                          onClick={() => setQuantities(q => ({ ...q, [product.id]: (q[product.id] || product.minOrderKg) + 5 }))}
+                          className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg font-bold transition-colors flex items-center justify-center text-gray-600">+</motion.button>
                       </div>
-                      <p className="text-xs text-gray-400">Min. {product.minOrderKg}kg</p>
+                      <p className="text-center text-xs text-green-600 font-semibold mb-3">
+                        Total: {formatPKR((quantities[product.id] || product.minOrderKg) * product.pricePerKg)}
+                      </p>
+                      <motion.button whileTap={{ scale: 0.97 }}
+                        onClick={() => handleAddToCart(product)} disabled={!product.inStock}
+                        className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${!product.inStock ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : inCart(product.id) ? 'bg-green-100 text-green-700 border border-green-200 hover:bg-green-200' : 'bg-green-700 hover:bg-green-800 text-white shadow-sm'}`}>
+                        <ShoppingCart size={15} />
+                        {!product.inStock ? 'Out of Stock' : inCart(product.id) ? 'Add More' : 'Add to Cart'}
+                      </motion.button>
+                      <label className="flex items-center justify-center gap-1.5 mt-2 cursor-pointer text-xs text-gray-400 hover:text-gray-600">
+                        <input type="checkbox" checked={compareIds.includes(product.id)} onChange={() => toggleCompare(product.id)} className="w-3.5 h-3.5 accent-green-600" />
+                        Compare
+                      </label>
                     </div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <motion.button whileTap={{ scale: 0.9 }}
-                        onClick={() => setQuantities(q => ({ ...q, [product.id]: Math.max(product.minOrderKg, (q[product.id] || product.minOrderKg) - 5) }))}
-                        className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg font-bold transition-colors flex items-center justify-center text-gray-600">−</motion.button>
-                      <span className="flex-1 text-center text-sm font-semibold">{quantities[product.id] || product.minOrderKg} kg</span>
-                      <motion.button whileTap={{ scale: 0.9 }}
-                        onClick={() => setQuantities(q => ({ ...q, [product.id]: (q[product.id] || product.minOrderKg) + 5 }))}
-                        className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg font-bold transition-colors flex items-center justify-center text-gray-600">+</motion.button>
-                    </div>
-                    <p className="text-center text-xs text-green-600 font-semibold mb-3">
-                      Total: {formatPKR((quantities[product.id] || product.minOrderKg) * product.pricePerKg)}
-                    </p>
-                    <motion.button whileTap={{ scale: 0.97 }}
-                      onClick={() => handleAddToCart(product)} disabled={!product.inStock}
-                      className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${!product.inStock ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : inCart(product.id) ? 'bg-green-100 text-green-700 border border-green-200 hover:bg-green-200' : 'bg-green-700 hover:bg-green-800 text-white shadow-sm'}`}>
-                      <ShoppingCart size={15} />
-                      {!product.inStock ? 'Out of Stock' : inCart(product.id) ? 'Add More' : 'Add to Cart'}
-                    </motion.button>
-                    <label className="flex items-center justify-center gap-1.5 mt-2 cursor-pointer text-xs text-gray-400 hover:text-gray-600">
-                      <input type="checkbox" checked={compareIds.includes(product.id)} onChange={() => toggleCompare(product.id)} className="w-3.5 h-3.5 accent-green-600" />
-                      Compare
-                    </label>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                ))}
               </AnimatePresence>
             </motion.div>
-            {/* Pagination */}
             {total > 12 && (
               <div className="flex justify-center gap-2 mt-8">
                 {page > 1 && (
@@ -491,7 +682,140 @@ export default function Store() {
         )}
       </section>
 
-      {/* ── WHY CHOOSE US ───────────────────────────────────────────── */}
+      {/* ── HOW IT WORKS ─────────────────────────────────────────────────────── */}
+      <section ref={howItWorksRef} id="how-it-works" className="bg-white py-16 border-t border-gray-100">
+        <div className="max-w-6xl mx-auto px-4">
+          <motion.div variants={scrollReveal} initial="initial" whileInView="animate" viewport={viewportOnce}
+            className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">From Paddy to Your Door</h2>
+            <p className="text-gray-500 text-sm max-w-xl mx-auto">
+              Every bag of rice goes through our hands before reaching yours
+            </p>
+          </motion.div>
+
+          <div className="relative">
+            {/* Desktop step connector */}
+            <div className="hidden md:block absolute top-[52px] left-[14%] right-[14%] border-t-2 border-dashed border-green-200 z-0" />
+
+            <motion.div variants={staggerContainer} initial="initial" whileInView="animate" viewport={viewportOnce}
+              className="grid grid-cols-1 md:grid-cols-4 gap-6 relative z-10">
+              {[
+                { n: 1, icon: '🌾', title: 'Paddy Procurement', desc: 'We source directly from local Malakand farmers. Every batch graded before entering our mill.' },
+                { n: 2, icon: '⚙️', title: 'Milling & Processing', desc: 'Cleaned, milled, and polished in our Batkhela facility. Moisture-tested to 12–14% for maximum shelf life.' },
+                { n: 3, icon: '📦', title: 'Quality Check & Packing', desc: 'Graded A/B/C by our team. Packed in sealed jute or PP bags. SKU-tracked for traceability.' },
+                { n: 4, icon: '🚚', title: 'Delivered to You', desc: 'TCS or Leopards courier. Same-day dispatch for orders before 2PM. Track with your order number.' },
+              ].map(step => (
+                <motion.div key={step.n} variants={staggerItem} {...cardHover}
+                  className="flex flex-col items-center text-center p-6 rounded-2xl bg-white border border-gray-100 shadow-sm hover:border-green-200 transition-all">
+                  <div className="relative mb-5">
+                    <div className="w-14 h-14 bg-green-700 rounded-full flex items-center justify-center shadow-lg shadow-green-900/20 text-2xl">
+                      {step.icon}
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-amber-400 text-green-900 text-xs font-extrabold rounded-full flex items-center justify-center">
+                      {step.n}
+                    </div>
+                  </div>
+                  <h3 className="font-bold text-gray-900 mb-2 text-sm leading-tight">{step.title}</h3>
+                  <p className="text-gray-500 text-xs leading-relaxed">{step.desc}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── VARIETIES SHOWCASE ───────────────────────────────────────────────── */}
+      {featuredProducts.length >= 3 && (
+        <section className="bg-gray-50 py-16">
+          <div className="max-w-6xl mx-auto px-4">
+            <motion.div variants={scrollReveal} initial="initial" whileInView="animate" viewport={viewportOnce}
+              className="text-center mb-10">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Our Rice Varieties</h2>
+              <p className="text-gray-500 text-sm">Choose the perfect rice for every occasion</p>
+            </motion.div>
+            <motion.div variants={staggerContainer} initial="initial" whileInView="animate" viewport={viewportOnce}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredProducts.map((product: any) => (
+                <motion.div key={product.id} variants={staggerItem} {...cardHover}
+                  className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                  <div className="h-48 bg-green-50 overflow-hidden relative">
+                    <img
+                      src={imgSrc(product)} alt={product.name}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                      onError={e => { (e.target as any).src = PLACEHOLDER_IMAGES.default; }} />
+                    <div className="absolute top-3 left-3">
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${GRADE_COLOR[product.grade] || GRADE_COLOR.A}`}>
+                        {GRADE_LABEL[product.grade] || 'Premium'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-5">
+                    <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">{product.variety}</span>
+                    <h3 className="font-bold text-gray-900 mt-2 mb-1 text-base leading-snug">{product.name}</h3>
+                    {product.description && (
+                      <p className="text-gray-500 text-xs mb-3 line-clamp-2 leading-relaxed">{product.description}</p>
+                    )}
+                    <div className="flex items-center justify-between mt-3">
+                      <div>
+                        <span className="text-xl font-extrabold text-green-700">{formatPKR(product.pricePerKg)}</span>
+                        <span className="text-gray-400 text-xs ml-1">/kg</span>
+                      </div>
+                      <Link to={`/products/${product.id}`}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-xs font-bold rounded-xl transition-colors">
+                        Shop Now <ChevronRight size={12} />
+                      </Link>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+      )}
+
+      {/* ── LIVE STATS STRIP ─────────────────────────────────────────────────── */}
+      <section className="bg-green-900 py-14">
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/10">
+            {[
+              { target: 5000, suffix: '+ kg', label: 'Sold This Month', sub: 'Fresh from the mill' },
+              { target: 200, suffix: '+', label: 'Happy Customers', sub: 'Wholesale & retail buyers' },
+              { target: 15, suffix: '+', label: 'Years Milling', sub: 'Est. 2010, Batkhela KPK' },
+            ].map((stat, i) => (
+              <div key={i} className="flex flex-col items-center text-center px-8 py-6">
+                <p className="text-4xl md:text-5xl font-extrabold text-amber-400 mb-1">
+                  <AnimatedCounter target={stat.target} suffix={stat.suffix} />
+                </p>
+                <p className="font-bold text-white text-base">{stat.label}</p>
+                <p className="text-green-300 text-xs mt-1">{stat.sub}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── WHOLESALE BANNER ─────────────────────────────────────────────────── */}
+      <section style={{ background: 'linear-gradient(135deg, #92400e 0%, #b45309 40%, #d97706 70%, #f59e0b 100%)' }} className="py-10">
+        <div className="max-w-6xl mx-auto px-4">
+          <motion.div variants={scrollReveal} initial="initial" whileInView="animate" viewport={viewportOnce}
+            className="flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+            <div className="flex-1">
+              <h3 className="text-2xl md:text-3xl font-extrabold text-white mb-2">📦 Ordering 500kg or more?</h3>
+              <p className="text-amber-100 text-sm leading-relaxed max-w-lg">
+                Get mill-direct wholesale pricing. We supply retailers, restaurants, and distributors across Pakistan.
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <Link to="/contact?subject=Wholesale+Inquiry"
+                className="inline-flex items-center gap-2 px-8 py-3.5 bg-white text-amber-800 font-bold text-sm rounded-xl hover:bg-amber-50 transition-colors shadow-lg whitespace-nowrap">
+                Get Wholesale Quote <ChevronRight size={16} />
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── WHY CHOOSE US ────────────────────────────────────────────────────── */}
       <section style={{ background: '#14532d' }} className="py-16">
         <div className="max-w-5xl mx-auto px-4">
           <motion.div variants={scrollReveal} initial="initial" whileInView="animate" viewport={viewportOnce}
@@ -501,13 +825,29 @@ export default function Store() {
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { emoji: '🌾', title: 'Direct from Mill', desc: 'No middlemen. Rice milled and packed at our Batkhela facility and shipped straight to you.', variant: scrollRevealLeft },
-              { emoji: '🔬', title: 'Quality Tested', desc: 'Every batch tested for moisture, grain length, and purity before leaving our mill.', variant: scrollReveal },
-              { emoji: '🚚', title: 'Fast Shipping', desc: 'Orders placed before 2 PM are dispatched same day. Coverage across all of Pakistan.', variant: scrollRevealRight },
+              {
+                emoji: '🏭',
+                title: 'Mill-to-Door Pricing',
+                desc: 'No distributors. No wholesalers. You buy at the price we sell from our Batkhela mill.',
+                variant: scrollRevealLeft,
+              },
+              {
+                emoji: '🔬',
+                title: 'Moisture & Purity Tested',
+                desc: 'Every batch tested: moisture 12–14%, broken grain max 2%. Failing batches never ship.',
+                variant: scrollReveal,
+              },
+              {
+                emoji: '📍',
+                title: 'Batkhela, Malakand Origin',
+                desc: "Sourced from Malakand valley farmers — one of Pakistan's most fertile rice-growing regions.",
+                variant: scrollRevealRight,
+              },
             ].map(f => (
               <motion.div key={f.title}
                 variants={f.variant} initial="initial" whileInView="animate" viewport={viewportOnce}
-                className="text-center p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                className="text-center p-6 rounded-2xl"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
                 <div className="text-4xl mb-4">{f.emoji}</div>
                 <h3 className="text-lg font-bold text-white mb-2">{f.title}</h3>
                 <p className="text-green-300 text-sm leading-relaxed">{f.desc}</p>
@@ -525,18 +865,18 @@ export default function Store() {
         </div>
       </section>
 
-      {/* Recently Viewed */}
+      {/* ── RECENTLY VIEWED ──────────────────────────────────────────────────── */}
       {recentlyViewed.length > 0 && (
         <section className="max-w-6xl mx-auto px-4 py-8 border-t border-gray-100">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Recently Viewed</h2>
-          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
+          <div className="flex gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
             {recentlyViewed.map(p => (
-              <Link key={p.id} to={`/products/${p.id}`} className="flex-shrink-0 w-44 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow group">
+              <Link key={p.id} to={`/products/${p.id}`}
+                className="flex-shrink-0 w-44 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow group">
                 <div className="h-28 bg-green-50 overflow-hidden">
                   {p.imageUrl
                     ? <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                    : <div className="w-full h-full flex items-center justify-center"><Wheat size={20} className="text-green-300" /></div>
-                  }
+                    : <div className="w-full h-full flex items-center justify-center"><Wheat size={20} className="text-green-300" /></div>}
                 </div>
                 <div className="p-3">
                   <p className="font-semibold text-xs text-gray-900 truncate group-hover:text-green-700">{p.name}</p>
@@ -548,7 +888,7 @@ export default function Store() {
         </section>
       )}
 
-      {/* Compare floating bar */}
+      {/* ── COMPARE BAR ──────────────────────────────────────────────────────── */}
       {compareIds.length > 0 && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-2xl">
           <GitCompare size={16} className="text-green-400" />
@@ -575,4 +915,3 @@ function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }
     </span>
   );
 }
-
