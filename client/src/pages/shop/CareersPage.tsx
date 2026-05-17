@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useMemo, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { Float, Sparkles, Environment } from '@react-three/drei';
+import * as THREE from 'three';
 import {
   MapPin, Briefcase, Clock, ChevronDown, Send, Upload, X,
   Users, Star, Zap, Heart, Globe, TrendingUp, CheckCircle2,
-  Paperclip, ExternalLink, AlertCircle,
+  ExternalLink,
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import api from '../../api';
@@ -65,70 +68,115 @@ const LEVEL_LABELS: Record<string, string> = {
 };
 const NOTICE_OPTIONS = ['Immediately', '1 week', '2 weeks', '1 month', '2 months', '3 months'];
 
-// ─── Animated empty state (swaying rice stalk) ───────────────────────────────
+// ─── 3D Empty State Scene ────────────────────────────────────────────────────
+
+function WheatStalk({ position, phase }: { position: [number, number, number]; phase: number }) {
+  const group = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    if (!group.current) return;
+    const t = clock.elapsedTime + phase;
+    group.current.rotation.z = Math.sin(t * 0.7) * 0.12;
+  });
+  return (
+    <group ref={group} position={position}>
+      {/* Stem */}
+      <mesh position={[0, 0.6, 0]}>
+        <cylinderGeometry args={[0.025, 0.04, 1.2, 8]} />
+        <meshStandardMaterial color="#65a30d" roughness={0.7} />
+      </mesh>
+      {/* Two leaves */}
+      <mesh position={[-0.12, 0.3, 0]} rotation={[0, 0, -0.7]}>
+        <capsuleGeometry args={[0.025, 0.28, 4, 8]} />
+        <meshStandardMaterial color="#4ade80" roughness={0.6} />
+      </mesh>
+      <mesh position={[0.12, 0.55, 0]} rotation={[0, 0, 0.6]}>
+        <capsuleGeometry args={[0.02, 0.22, 4, 8]} />
+        <meshStandardMaterial color="#4ade80" roughness={0.6} />
+      </mesh>
+      {/* Grain head — cluster of capsules */}
+      {Array.from({ length: 8 }, (_, i) => {
+        const angle = (i / 8) * Math.PI * 2;
+        const r = 0.07;
+        return (
+          <mesh
+            key={i}
+            position={[Math.sin(angle) * r, 1.25 + (i % 2) * 0.06, Math.cos(angle) * r * 0.3]}
+            rotation={[0.3, 0, angle]}
+          >
+            <capsuleGeometry args={[0.03, 0.14, 4, 8]} />
+            <meshStandardMaterial color="#fbbf24" roughness={0.5} metalness={0.05} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+function FloatingGrain({ position, delay }: { position: [number, number, number]; delay: number }) {
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const t = clock.elapsedTime + delay;
+    ref.current.position.y = position[1] + Math.sin(t * 0.8) * 0.12;
+    ref.current.rotation.z += 0.008;
+    ref.current.rotation.x += 0.005;
+  });
+  return (
+    <mesh ref={ref} position={position}>
+      <capsuleGeometry args={[0.04, 0.13, 4, 8]} />
+      <meshStandardMaterial color="#fef3c7" roughness={0.4} metalness={0.05} />
+    </mesh>
+  );
+}
+
+function EmptyScene() {
+  const grains = useMemo(() =>
+    Array.from({ length: 18 }, (_, i) => ({
+      position: [(Math.random() - 0.5) * 4, (Math.random() - 0.5) * 2, (Math.random() - 0.5)] as [number, number, number],
+      delay: i * 0.4,
+    })), []);
+
+  return (
+    <>
+      <ambientLight intensity={0.9} />
+      <directionalLight position={[3, 5, 3]} intensity={1.3} />
+      <pointLight position={[-2, 2, 1]} color="#fbbf24" intensity={0.5} />
+      <Environment preset="forest" />
+
+      {/* Wheat stalks cluster */}
+      <WheatStalk position={[0, -1.2, 0]} phase={0} />
+      <WheatStalk position={[-0.55, -1.3, -0.1]} phase={1.2} />
+      <WheatStalk position={[0.55, -1.25, 0.05]} phase={2.1} />
+      <WheatStalk position={[-1.1, -1.35, -0.2]} phase={0.7} />
+      <WheatStalk position={[1.1, -1.3, 0.1]} phase={1.8} />
+
+      {/* Ground */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.4, 0]}>
+        <circleGeometry args={[3, 32]} />
+        <meshStandardMaterial color="#d1fae5" roughness={1} />
+      </mesh>
+
+      {/* Floating grains */}
+      {grains.map((g, i) => <FloatingGrain key={i} {...g} />)}
+
+      <Sparkles count={30} scale={[4, 3, 2]} size={1.2} speed={0.2} opacity={0.5} color="#fbbf24" />
+    </>
+  );
+}
+
 function EmptyState() {
   return (
     <motion.div
-      className="flex flex-col items-center justify-center py-24 text-center"
-      initial={{ opacity: 0, y: 20 }}
+      className="flex flex-col items-center justify-center py-12 text-center"
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
-      <div className="relative w-48 h-48 mb-6">
-        {/* Soil */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-4 bg-amber-900/30 rounded-full blur-sm" />
-        {/* Stalk */}
-        <motion.div
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 origin-bottom"
-          animate={{ rotate: [-3, 3, -3] }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          {/* Stem */}
-          <div className="w-1.5 h-28 bg-gradient-to-t from-amber-700 to-green-500 rounded-full mx-auto" />
-          {/* Leaves */}
-          <motion.div
-            className="absolute top-10 -left-8 w-10 h-4 bg-green-500 rounded-full origin-right"
-            style={{ transform: 'rotate(-30deg)' }}
-            animate={{ rotate: [-30, -20, -30] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
-          />
-          <motion.div
-            className="absolute top-16 -right-7 w-9 h-3.5 bg-green-600 rounded-full origin-left"
-            style={{ transform: 'rotate(25deg)' }}
-            animate={{ rotate: [25, 15, 25] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
-          />
-          {/* Grain head */}
-          <motion.div
-            className="absolute -top-10 left-1/2 -translate-x-1/2"
-            animate={{ rotate: [-5, 8, -5] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: 0.1 }}
-          >
-            {[...Array(7)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute w-2 h-5 bg-amber-400 rounded-full"
-                style={{
-                  left: `${Math.sin(i * 0.9) * 12}px`,
-                  top: `${-i * 6}px`,
-                  transform: `rotate(${i * 20 - 60}deg)`,
-                  opacity: 0.8 + i * 0.03,
-                }}
-              />
-            ))}
-          </motion.div>
-        </motion.div>
-
-        {/* Floating grain particles */}
-        {[...Array(5)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1.5 h-3 bg-amber-300 rounded-full opacity-60"
-            style={{ left: `${30 + i * 18}px`, top: `${40 + (i % 3) * 20}px` }}
-            animate={{ y: [-4, 4, -4], opacity: [0.4, 0.8, 0.4] }}
-            transition={{ duration: 1.8 + i * 0.4, repeat: Infinity, delay: i * 0.3 }}
-          />
-        ))}
+      {/* 3D Scene */}
+      <div className="w-full max-w-xs h-64 rounded-3xl overflow-hidden bg-gradient-to-b from-sky-50 to-green-50 mb-6 shadow-inner">
+        <Canvas camera={{ position: [0, 0.2, 4.5], fov: 45 }} gl={{ antialias: true, alpha: true }}>
+          <EmptyScene />
+        </Canvas>
       </div>
 
       <h3 className="text-2xl font-bold text-green-900 mb-2">No Open Positions Right Now</h3>
@@ -136,9 +184,9 @@ function EmptyState() {
         Our fields are tended, our mill is humming. Check back soon — new opportunities grow with every season.
       </p>
       <p className="mt-4 text-sm text-gray-400">
-        Interested in future roles? Email us at{' '}
-        <a href="mailto:ricemill@sameergul.com" className="text-green-600 hover:underline">
-          ricemill@sameergul.com
+        Interested in future roles?{' '}
+        <a href="mailto:ricemill@sameergul.com" className="text-green-600 hover:underline font-medium">
+          Email us directly
         </a>
       </p>
     </motion.div>
