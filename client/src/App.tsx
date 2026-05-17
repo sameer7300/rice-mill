@@ -1,9 +1,9 @@
 import './i18n';
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { HelmetProvider } from 'react-helmet-async';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LangProvider } from './contexts/LangContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -58,6 +58,58 @@ import BlogPostPage from './pages/shop/BlogPostPage';
 import WholesalePage from './pages/shop/WholesalePage';
 import NotFoundPage from './pages/NotFoundPage';
 
+// Scrolls to top on every route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [pathname]);
+  return null;
+}
+
+// Thin amber progress bar at the top — plays on every route change
+function TopLoader() {
+  const { pathname } = useLocation();
+  const [width, setWidth] = useState(0);
+  const [visible, setVisible] = useState(false);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+
+    setVisible(true);
+    setWidth(0);
+
+    // Quickly sprint to 70%, then slow-cruise to 90%
+    timers.current.push(setTimeout(() => setWidth(70), 60));
+    timers.current.push(setTimeout(() => setWidth(90), 400));
+    // Complete and fade out
+    timers.current.push(setTimeout(() => setWidth(100), 650));
+    timers.current.push(setTimeout(() => setVisible(false), 900));
+
+    return () => timers.current.forEach(clearTimeout);
+  }, [pathname]);
+
+  if (!visible) return null;
+
+  return (
+    <div className="fixed top-0 left-0 right-0 z-[9999] pointer-events-none">
+      <motion.div
+        className="h-[3px] origin-left"
+        style={{
+          width: `${width}%`,
+          background: 'linear-gradient(90deg, #fbbf24, #f59e0b)',
+          boxShadow: '0 0 8px rgba(251,191,36,0.7)',
+          transition: width === 0 ? 'none' : width === 100 ? 'width 180ms ease-in' : 'width 320ms ease-out',
+        }}
+        animate={{ opacity: width === 100 ? [1, 0] : 1 }}
+        transition={{ duration: 0.25, delay: width === 100 ? 0.1 : 0 }}
+      />
+    </div>
+  );
+}
+
 function ChatWrapper({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const token = user ? (localStorage.getItem('token') ?? undefined) : undefined;
@@ -86,6 +138,9 @@ function AppRoutes() {
   const location = useLocation();
 
   return (
+    <>
+      <ScrollToTop />
+      <TopLoader />
     <AnimatePresence mode="wait" initial={false}>
       <Routes location={location} key={location.pathname}>
         {/* ─── PUBLIC STOREFRONT ──────────────────────────────────────── */}
@@ -159,6 +214,7 @@ function AppRoutes() {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AnimatePresence>
+    </>
   );
 }
 
