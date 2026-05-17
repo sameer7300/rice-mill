@@ -852,4 +852,91 @@ Two tabs:
 
 ---
 
+---
+
+## Image Upload
+
+```
+POST /api/upload                         [JWT admin/staff]
+→ multipart/form-data, field: "image"
+→ Saves to server/uploads/ with UUID filename
+→ Returns: { success: true, url: "/uploads/uuid.jpg" }  ← RELATIVE path only
+
+Static serving:
+app.use('/uploads', express.static(..., { setHeaders: CORS * }))
+Registered BEFORE all /api routes in index.js
+
+Frontend helpers:
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+function toDisplayUrl(url): full URL for display, relative for storage
+ImageUpload.tsx: useEffect syncs preview from value prop (for edit forms)
+client/.env: VITE_API_URL=http://localhost:5000
+```
+
+## New Routes
+
+| URL | Access |
+|---|---|
+| `/wholesale` | Public (ShopLayout) |
+
+## New Models
+
+```prisma
+PricingTier        id, label, rangeLabel, discount?, description?, ctaText, ctaType, sortOrder, isActive
+WholesalePageContent id="main", heroTitle, heroSubtitle, exportNote, testimonialText/Name/Role, warehouseImage, loadingImage
+FAQ                id, question, answer, sortOrder, isActive
+```
+
+## New API Endpoints
+
+```
+GET    /api/ecommerce/pricing-tiers         [public]   active tiers by sortOrder
+GET    /api/ecommerce/pricing-tiers/all     [admin/staff] all tiers
+POST   /api/ecommerce/pricing-tiers         [admin]
+PUT    /api/ecommerce/pricing-tiers/:id     [admin]
+DELETE /api/ecommerce/pricing-tiers/:id     [admin]
+PATCH  /api/ecommerce/pricing-tiers/reorder [admin]    { ids: [] }
+GET    /api/ecommerce/wholesale-content     [public]
+PUT    /api/ecommerce/wholesale-content     [admin]
+GET    /api/faq                             [public]
+GET    /api/faq/all                         [admin/staff]
+POST   /api/faq                             [admin]
+PUT    /api/faq/:id                         [admin]
+DELETE /api/faq/:id                         [admin]
+PATCH  /api/faq/reorder                     [admin]    { ids: [] }
+```
+
+## SKU Auto-Generation
+
+Format: `RM-{VARIETY_CODE}-{GRADE}-{LAST4_TS}{2RAND}`
+Codes: BSM=Basmati, SK=SuperKernel, IR6=IRRI-6, IR9=IRRI-9, PK3=PK-386, OTH=Other
+Generated in ecommerceRoutes.js `generateSKU(variety, grade)` if not provided.
+
+## Product Form (Ecommerce.tsx)
+
+3-tab modal: Basic Info | Specifications | Nutrition
+Spec fields: weight, packaging, origin, processingType, moistureContent, grainLength,
+             cookingTime, aroma, brokenGrain, certifications, shelfLife, storageInstructions
+Nutrition: dynamic row editor → stored as JSON in nutritionInfo field
+
+## Ecommerce.tsx Tabs (now 7)
+
+1. Overview  2. Products  3. Discounts  4. Email  5. Settings  6. Pricing Tiers  7. FAQs
+
+## Store.tsx Changes
+
+- Removed: recently viewed section (backend routes kept)
+- FAQ section: fetched from /api/faq (admin-configurable)
+- Wholesale tiers: fetched from /api/ecommerce/pricing-tiers (admin-configurable)
+- All product images: toDisplayUrl() applied so /uploads/ paths display correctly
+
+## WholesalePage.tsx (/wholesale)
+
+Public page under ShopLayout:
+- Hero with benefits (direct pricing, export docs, account manager)
+- Pricing tiers table (from API)
+- Wholesale inquiry form (tier selector + POST /api/wholesale/inquiry)
+- FAQ accordion (from API)
+- WhatsApp CTA footer
+
 *Last updated: May 2026 · Al-Noor Rice Mills · Batkhela, Malakand, KPK, Pakistan*
