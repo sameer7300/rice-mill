@@ -111,11 +111,20 @@ function AppRoutes() {
         </Route>
 
         {/* ─── AUTH ───────────────────────────────────────────────────── */}
-        <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
+        <Route path="/login" element={
+          user
+            ? <Navigate to={user.role === 'supplier' ? '/supplier' : '/dashboard'} replace />
+            : <Login />
+        } />
         <Route path="/register" element={user ? <Navigate to="/account" replace /> : <RegisterPage />} />
 
         {/* ─── ADMIN DASHBOARD ────────────────────────────────────────── */}
-        <Route path="/dashboard" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+        {/* Suppliers are never allowed into /dashboard — redirect them before Layout mounts */}
+        <Route path="/dashboard" element={
+          user?.role === 'supplier'
+            ? <Navigate to="/supplier" replace />
+            : <ProtectedRoute><Layout /></ProtectedRoute>
+        }>
           <Route index element={<Dashboard />} />
           <Route path="inventory" element={<ProtectedRoute roles={['admin', 'staff']}><Inventory /></ProtectedRoute>} />
           <Route path="mill" element={<ProtectedRoute roles={['admin', 'staff']}><MillOperations /></ProtectedRoute>} />

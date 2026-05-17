@@ -25,7 +25,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Legend, AreaChart, Area, Line
 } from 'recharts';
-import { useNavigate, Link, Navigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
 
 export default function Dashboard() {
@@ -33,9 +33,6 @@ export default function Dashboard() {
   const { user, isAdmin, isStaff, isCustomer } = useAuth();
   const navigate = useNavigate();
   const [data, setData] = useState<any>({});
-
-  // Suppliers have their own portal — never show admin dashboard to them
-  if (user?.role === 'supplier') return <Navigate to="/supplier" replace />;
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
