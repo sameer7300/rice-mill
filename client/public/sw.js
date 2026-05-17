@@ -1,4 +1,4 @@
-const CACHE = 'ricemill-v2';
+const CACHE = 'ricemill-v3';
 const ASSETS = ['/', '/index.html'];
 
 self.addEventListener('install', e => {
@@ -14,11 +14,15 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // API calls: network only
-  if (e.request.url.includes('/api/')) return;
-  // Static assets: cache first
+  // Only handle GET requests — Cache API does not support PUT on POST/WebSocket/etc.
+  if (e.request.method !== 'GET') return;
+  // API and socket calls: network only, never cache
+  if (e.request.url.includes('/api/') || e.request.url.includes('/socket.io/')) return;
+  // Static assets: cache first, then network
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
+      // Only cache valid same-origin responses
+      if (!res || res.status !== 200 || res.type === 'opaque') return res;
       const clone = res.clone();
       caches.open(CACHE).then(c => c.put(e.request, clone));
       return res;
