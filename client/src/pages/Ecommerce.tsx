@@ -9,6 +9,7 @@ import PageHeader, { ActionButton, FormField, inputCls, selectCls } from '../com
 import { formatPKR, formatDate } from '../utils/export';
 import { OrderStatusBadge } from '../components/ui/Badge';
 import PageTransition from '../components/PageTransition';
+import ImageUpload from '../components/ui/ImageUpload';
 
 const TABS = ['overview', 'products', 'discounts', 'email', 'settings'] as const;
 type Tab = typeof TABS[number];
@@ -527,7 +528,12 @@ export default function Ecommerce() {
               </FormField>
             </div>
             <FormField label="Description"><textarea value={productForm.description} onChange={e => setProductForm(f => ({ ...f, description: e.target.value }))} rows={2} className={inputCls} /></FormField>
-            <FormField label="Image URL (optional)"><input type="url" value={productForm.imageUrl} onChange={e => setProductForm(f => ({ ...f, imageUrl: e.target.value }))} className={inputCls} placeholder="https://..." /></FormField>
+            <ImageUpload
+              value={productForm.imageUrl}
+              onChange={url => setProductForm(f => ({ ...f, imageUrl: url }))}
+              label="Product Image"
+              hint="Displayed on storefront product cards and detail page"
+            />
             <div className="flex gap-5">
               <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={productForm.isPublished} onChange={e => setProductForm(f => ({ ...f, isPublished: e.target.checked }))} className="w-4 h-4 accent-green-600" /><span className="font-medium text-gray-700">Published (visible to customers)</span></label>
               <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={productForm.inStock} onChange={e => setProductForm(f => ({ ...f, inStock: e.target.checked }))} className="w-4 h-4 accent-blue-600" /><span className="font-medium text-gray-700">In Stock</span></label>

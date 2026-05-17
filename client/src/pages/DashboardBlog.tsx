@@ -7,6 +7,7 @@ import PageHeader, { ActionButton, FormField, inputCls } from '../components/ui/
 import { TableSkeleton } from '../components/ui/Skeleton';
 import { formatDate } from '../utils/export';
 import PageTransition from '../components/PageTransition';
+import ImageUpload from '../components/ui/ImageUpload';
 
 export default function DashboardBlog() {
   const [posts, setPosts] = useState<any[]>([]);
@@ -107,9 +108,12 @@ export default function DashboardBlog() {
             <FormField label="Excerpt">
               <input type="text" value={form.excerpt} onChange={e => inp('excerpt', e.target.value)} className={inputCls} placeholder="Short description for listing page" />
             </FormField>
-            <FormField label="Cover Image URL">
-              <input type="url" value={form.coverImage} onChange={e => inp('coverImage', e.target.value)} className={inputCls} placeholder="https://..." />
-            </FormField>
+            <ImageUpload
+              value={form.coverImage}
+              onChange={url => inp('coverImage', url)}
+              label="Cover Image"
+              hint="Shown at the top of the blog post and in the blog listing"
+            />
             <FormField label="Content" required>
               <textarea value={form.content} onChange={e => inp('content', e.target.value)} required rows={10}
                 className={`w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500`}
