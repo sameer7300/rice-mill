@@ -1,152 +1,230 @@
 {
-  "app": {
-    "name": "Rice Mill Management",
-    "tagline": "Pakistan's Smart Rice Mill System"
-  },
+  "lang": { "en": "English", "ur": "اردو", "ar": "العربية", "pa": "ਪੰਜਾਬੀ", "hi": "हिन्दी", "bn": "বাংলা", "zh": "中文" },
+
   "nav": {
-    "dashboard": "Dashboard",
-    "inventory": "Inventory",
-    "mill": "Mill Operations",
-    "orders": "Orders",
-    "customers": "Customers",
-    "suppliers": "Suppliers",
-    "finance": "Finance",
-    "users": "Users",
-    "logout": "Logout"
+    "shop": "Shop", "about": "About", "blog": "Blog", "contact": "Contact",
+    "track_order": "Track Order", "seller_login": "Seller Login", "sign_in": "Sign In",
+    "register": "Register", "my_account": "My Account", "logout": "Logout",
+    "search_placeholder": "Search rice varieties...", "cart": "Cart",
+    "favorites": "Favorites", "menu": "Menu", "dashboard": "Dashboard",
+    "inventory": "Inventory", "mill": "Mill Operations", "orders": "Orders",
+    "customers": "Customers", "suppliers": "Suppliers", "finance": "Finance", "users": "Users"
   },
+
+  "hero": {
+    "badge": "Premium Rice Mill Since 2010 · Batkhela, KPK",
+    "headline1": "Fresh from Batkhela's Mill",
+    "headline2": "To Your Kitchen",
+    "subtext": "Premium Basmati · Super Kernel · IRRI varieties. Milled fresh in Batkhela, Malakand. Delivered across Pakistan.",
+    "cta_primary": "Shop Rice",
+    "cta_secondary": "Our Story",
+    "trust1": "Fast Delivery",
+    "trust2": "Quality Guaranteed",
+    "trust3": "Freshly Milled",
+    "scroll": "Scroll",
+    "stat1": "Years Experience",
+    "stat2": "Rice Varieties",
+    "stat3": "Happy Buyers",
+    "eyebrow": "Established MMX · Batkhela, Malakand",
+    "tagline": "Rice, milled with the",
+    "tagline_em": "patience",
+    "tagline2": "of foothills.",
+    "description": "Premium basmati and heritage grains from the Swat Valley — sun-dried in the open courtyard, aged twelve months in jute, milled to order."
+  },
+
+  "ticker": {
+    "item1": "Free Delivery above PKR 10,000",
+    "item2": "Same-day dispatch before 2 PM PKT",
+    "item3": "Premium Basmati — Harvest 2025",
+    "item4": "Order by phone: +92-946-123456",
+    "item5": "Earn loyalty points on every order",
+    "item6": "Delivery across all Pakistan"
+  },
+
+  "filters": {
+    "search": "Search rice...", "all_grades": "All Grades", "all_varieties": "All Varieties",
+    "featured": "Featured", "more_filters": "More Filters", "price_range": "Price Range (PKR/kg)",
+    "availability": "In Stock Only", "min_order": "Min Order", "sort_by": "Sort By",
+    "clear_all": "Clear All", "active_filters": "Active Filters",
+    "sort_featured": "Featured", "sort_price_asc": "Price: Low to High",
+    "sort_price_desc": "Price: High to Low", "sort_newest": "Newest",
+    "any_order": "Any", "up_to": "Up to"
+  },
+
+  "products": {
+    "section_title": "Our Products", "available": "product available",
+    "available_plural": "products available", "add_to_cart": "Add to Cart",
+    "added": "Added!", "out_of_stock": "Out of Stock", "low_stock": "Low Stock",
+    "min_order": "Min order", "per_kg": "/kg", "total": "Total", "compare": "Compare",
+    "notify_me": "Notify Me", "grade_premium": "Premium", "grade_standard": "Standard",
+    "grade_economy": "Economy", "new_badge": "New", "no_products": "No products match your filters",
+    "clear_filters": "Clear Filters", "shop_harvest": "Shop the harvest"
+  },
+
+  "product_detail": {
+    "sku": "SKU", "min_order": "Min Order", "max_order": "Max Order",
+    "in_stock": "In Stock", "out_of_stock": "Out of Stock", "kg_available": "kg available",
+    "quantity": "Quantity", "add_to_cart": "Add to Cart", "add_to_wishlist": "Add to Wishlist",
+    "tab_description": "Description", "tab_specs": "Specifications",
+    "tab_nutrition": "Nutrition", "tab_reviews": "Reviews",
+    "ask_btn": "Ask Us", "bulk_quote": "Ordering 500kg+?", "get_quote": "Get Quote",
+    "notify_available": "Notify Me When Available", "notify_email": "Your email",
+    "notify_submit": "Alert Me", "notify_success": "You're on the waitlist!",
+    "share_whatsapp": "Share on WhatsApp", "copy_link": "Copy Link", "copied": "Copied!"
+  },
+
+  "cart": {
+    "title": "Your Cart", "empty": "Your cart is empty", "empty_sub": "Add some rice to get started",
+    "start_shopping": "Start Shopping", "subtotal": "Subtotal", "shipping": "Shipping",
+    "free_shipping": "Free Shipping", "discount": "Discount", "total": "Total",
+    "promo_placeholder": "Promo code", "apply": "Apply", "proceed": "Proceed to Checkout",
+    "continue": "Continue Shopping", "remove": "Remove", "free_above": "Free delivery above PKR"
+  },
+
+  "checkout": {
+    "title": "Checkout", "contact": "Contact Information", "delivery": "Delivery Address",
+    "payment": "Payment Method", "order_summary": "Order Summary",
+    "full_name": "Full Name", "phone": "Phone Number", "email": "Email (optional)",
+    "address": "Street Address", "city": "City", "notes": "Order Notes",
+    "notes_placeholder": "Special delivery instructions...",
+    "cod": "Cash on Delivery", "bank": "Bank Transfer", "easypaisa": "EasyPaisa", "jazzcash": "JazzCash",
+    "promo": "Promo Code", "apply_promo": "Apply", "place_order": "Place Order",
+    "placing": "Placing Order...", "create_account": "Create an account (recommended)",
+    "guest": "Continue as Guest", "password": "Password"
+  },
+
   "auth": {
-    "login": "Login",
-    "email": "Email Address",
-    "password": "Password",
-    "loginBtn": "Sign In",
-    "loggingIn": "Signing in...",
-    "invalidCreds": "Invalid email or password"
+    "login_title": "Welcome back", "login_sub": "Sign in to your account",
+    "email": "Email", "password": "Password", "forgot": "Forgot password?",
+    "sign_in": "Sign In", "signing_in": "Signing in...",
+    "no_account": "Don't have an account?", "register": "Register",
+    "register_title": "Create account", "full_name": "Full Name",
+    "confirm_password": "Confirm Password", "already_account": "Already have an account?",
+    "sign_in_link": "Sign in", "two_fa_title": "Two-Factor Authentication",
+    "two_fa_code": "6-digit code", "two_fa_verify": "Verify",
+    "locked_title": "Account Locked", "locked_msg": "Too many failed attempts.",
+    "loginBtn": "Sign In", "loggingIn": "Signing in...", "invalidCreds": "Invalid email or password"
   },
-  "dashboard": {
-    "welcome": "Welcome back",
-    "totalPaddy": "Total Paddy Stock",
-    "totalRice": "Total Rice Stock",
-    "totalOrders": "Total Orders",
-    "pendingOrders": "Pending Orders",
-    "revenue": "Total Revenue",
-    "profit": "Net Profit",
-    "recentOrders": "Recent Orders",
-    "millStatus": "Mill Status",
-    "quickActions": "Quick Actions"
+
+  "about": {
+    "title": "About Al-Noor Rice Mills", "story_heading": "Our Story",
+    "story": "Founded in 2010 in the fertile Malakand valley, Al-Noor Rice Mills has grown from a local paddy processor to one of the region's most trusted rice suppliers.",
+    "mission_heading": "Our Mission",
+    "mission": "To deliver the freshest, highest-quality rice directly from our Batkhela mill to tables across Pakistan.",
+    "cta": "Start Shopping"
   },
-  "inventory": {
-    "title": "Inventory",
-    "paddyStock": "Paddy Stock",
-    "riceStock": "Rice Stock",
-    "addPaddy": "Add Paddy",
-    "addRice": "Add Rice Stock",
-    "variety": "Variety",
-    "quantity": "Quantity (kg)",
-    "grade": "Grade",
-    "price": "Price/kg (PKR)",
-    "supplier": "Supplier",
-    "receivedDate": "Received Date",
-    "totalKg": "Total kg",
-    "noStock": "No stock entries yet"
+
+  "contact": {
+    "title": "Contact Us", "sub": "We're here to help",
+    "form_name": "Full Name", "form_email": "Email", "form_phone": "Phone",
+    "form_subject": "Subject", "form_message": "Message", "form_submit": "Send Message",
+    "sending": "Sending...", "success": "Message sent! We'll reply within 24 hours.",
+    "info_hours": "Business Hours", "hours_value": "Mon–Sat, 8:00 AM – 6:00 PM PKT"
   },
-  "mill": {
-    "title": "Mill Operations",
-    "batches": "Milling Batches",
-    "newBatch": "New Batch",
-    "batchNo": "Batch Number",
-    "paddyIn": "Paddy Input (kg)",
-    "riceOut": "Rice Output (kg)",
-    "yield": "Yield %",
-    "status": "Status",
-    "pending": "Pending",
-    "inProgress": "In Progress",
-    "completed": "Completed",
-    "startMilling": "Start Milling",
-    "completeBatch": "Complete Batch",
-    "avgYield": "Average Yield"
+
+  "careers": {
+    "title": "Join Our Team", "sub": "Build your career at Al-Noor Rice Mills",
+    "no_jobs_title": "No Open Positions Right Now",
+    "no_jobs_sub": "We're growing. New roles open regularly.",
+    "apply_now": "Apply Now", "view_details": "View Details",
+    "full_time": "Full Time", "part_time": "Part Time", "contract": "Contract"
   },
-  "orders": {
-    "title": "Orders",
-    "newOrder": "New Order",
-    "orderNo": "Order #",
-    "customer": "Customer",
-    "items": "Items",
-    "total": "Total (PKR)",
-    "paid": "Paid (PKR)",
-    "status": "Status",
-    "payment": "Payment",
-    "pending": "Pending",
-    "confirmed": "Confirmed",
-    "processing": "Processing",
-    "shipped": "Shipped",
-    "delivered": "Delivered",
-    "cancelled": "Cancelled",
-    "unpaid": "Unpaid",
-    "partial": "Partial",
-    "paidStatus": "Paid",
-    "viewOrder": "View Order",
-    "noOrders": "No orders yet"
+
+  "blog": {
+    "title": "Latest News", "sub": "Updates from Al-Noor Rice Mills",
+    "read_more": "Read More →", "back": "← Back to Blog", "no_posts": "No blog posts yet"
   },
-  "customers": {
-    "title": "Customers",
-    "addCustomer": "Add Customer",
-    "businessName": "Business Name",
-    "contact": "Contact Person",
-    "phone": "Phone",
-    "address": "Address",
-    "creditLimit": "Credit Limit (PKR)",
-    "totalOrders": "Total Orders",
-    "noCustomers": "No customers yet"
+
+  "wholesale": {
+    "title": "Wholesale & Export", "sub": "Built for restaurants, retailers, and exporters",
+    "request_quote": "Request Quote", "shop_now": "Shop Now",
+    "form_title": "Request a Quote", "form_submit": "Send Enquiry",
+    "sending": "Sending...", "success": "We'll contact you within 4 hours on WhatsApp"
   },
-  "suppliers": {
-    "title": "Suppliers",
-    "addSupplier": "Add Supplier",
-    "businessName": "Business Name",
-    "contact": "Contact Person",
-    "phone": "Phone",
-    "address": "Address",
-    "recordPurchase": "Record Purchase",
-    "noSuppliers": "No suppliers yet"
+
+  "newsletter": {
+    "title": "Get Fresh Harvest Alerts",
+    "sub": "Be the first to know when fresh harvest arrives",
+    "placeholder": "your@email.com", "btn": "Subscribe",
+    "success": "You're subscribed!", "disclaimer": "No spam. Unsubscribe anytime."
   },
-  "finance": {
-    "title": "Finance",
-    "revenue": "Revenue",
-    "expenses": "Expenses",
-    "profit": "Profit",
-    "addExpense": "Add Expense",
-    "category": "Category",
-    "amount": "Amount (PKR)",
-    "description": "Description",
-    "date": "Date",
-    "electricity": "Electricity",
-    "maintenance": "Maintenance",
-    "labour": "Labour",
-    "transport": "Transport",
-    "other": "Other",
-    "monthlyRevenue": "Monthly Revenue",
-    "totalProfit": "Total Profit",
-    "purchaseCosts": "Purchase Costs"
+
+  "footer": {
+    "tagline": "Premium Quality Rice, Direct from Mill",
+    "shop_heading": "Shop", "company_heading": "Company",
+    "support_heading": "Support", "account_heading": "My Account",
+    "browse": "Browse Products", "basmati": "Basmati Rice", "super_kernel": "Super Kernel",
+    "track": "Track Order", "about": "About Us", "blog": "Blog",
+    "careers": "Careers", "contact": "Contact Us", "track_order": "Track Your Order",
+    "shipping_policy": "Shipping Policy", "refund_policy": "Refund Policy",
+    "privacy_policy": "Privacy Policy", "terms": "Terms & Conditions",
+    "create_account": "Create Account", "sign_in": "Sign In",
+    "wholesale": "Wholesale Inquiry", "bulk": "Bulk Orders (500kg+)",
+    "seller_login": "Seller / Admin Login",
+    "hours_title": "Business Hours", "hours": "Mon – Sat",
+    "hours_time": "8:00 AM – 6:00 PM PKT",
+    "rights": "All rights reserved", "sitemap": "Sitemap",
+    "developer": "Developed by Sameer Gul"
   },
+
+  "account": {
+    "welcome": "Good morning", "welcome_afternoon": "Good afternoon", "welcome_evening": "Good evening",
+    "tab_orders": "My Orders", "tab_favorites": "Favorites", "tab_reviews": "Reviews",
+    "tab_addresses": "Addresses", "tab_payment": "Payment", "tab_rewards": "Rewards",
+    "tab_profile": "Profile", "tab_security": "Security", "no_orders": "No orders yet",
+    "shop_now": "Start Shopping →", "no_favorites": "No favorites yet",
+    "tier_bronze": "Bronze", "tier_silver": "Silver", "tier_gold": "Gold",
+    "save": "Save Changes", "saving": "Saving..."
+  },
+
   "common": {
-    "save": "Save",
-    "cancel": "Cancel",
-    "edit": "Edit",
-    "delete": "Delete",
-    "view": "View",
-    "search": "Search...",
-    "loading": "Loading...",
-    "noData": "No data available",
-    "confirm": "Confirm",
-    "yes": "Yes",
-    "no": "No",
-    "pkr": "PKR",
-    "kg": "kg",
-    "actions": "Actions",
-    "createdAt": "Created",
-    "name": "Name",
-    "email": "Email",
-    "role": "Role",
-    "active": "Active",
-    "inactive": "Inactive"
-  }
+    "loading": "Loading...", "error": "Something went wrong", "retry": "Try Again",
+    "back": "Go Back", "cancel": "Cancel", "save": "Save", "delete": "Delete",
+    "edit": "Edit", "view": "View", "close": "Close", "confirm": "Confirm",
+    "yes": "Yes", "no": "No", "or": "or", "search": "Search", "filter": "Filter",
+    "clear": "Clear", "show_more": "Show More", "show_less": "Show Less",
+    "page": "Page", "of": "of", "results": "results", "required": "Required",
+    "optional": "Optional", "success": "Success!", "pkr": "PKR", "kg": "kg",
+    "per_kg": "/kg", "noData": "No data available", "actions": "Actions"
+  },
+
+  "404": {
+    "title": "Page Not Found",
+    "message": "The page you're looking for doesn't exist.",
+    "go_home": "Go to Store", "go_back": "Go Back"
+  },
+
+  "dashboard": {
+    "welcome": "Welcome back", "totalPaddy": "Total Paddy Stock",
+    "totalRice": "Total Rice Stock", "totalOrders": "Total Orders",
+    "pendingOrders": "Pending Orders", "revenue": "Total Revenue",
+    "profit": "Net Profit", "recentOrders": "Recent Orders",
+    "millStatus": "Mill Status", "quickActions": "Quick Actions"
+  },
+
+  "inventory": {
+    "title": "Inventory", "paddyStock": "Paddy Stock", "riceStock": "Rice Stock",
+    "addPaddy": "Add Paddy", "addRice": "Add Rice Stock", "variety": "Variety",
+    "quantity": "Quantity (kg)", "grade": "Grade", "price": "Price/kg (PKR)",
+    "supplier": "Supplier", "receivedDate": "Received Date", "noStock": "No stock entries yet"
+  },
+
+  "mill": {
+    "title": "Mill Operations", "batches": "Milling Batches", "newBatch": "New Batch",
+    "batchNo": "Batch Number", "paddyIn": "Paddy Input (kg)", "riceOut": "Rice Output (kg)",
+    "yield": "Yield %", "status": "Status", "pending": "Pending",
+    "inProgress": "In Progress", "completed": "Completed",
+    "startMilling": "Start Milling", "completeBatch": "Complete Batch", "avgYield": "Average Yield"
+  },
+
+  "orders": {
+    "title": "Orders", "newOrder": "New Order", "orderNo": "Order #",
+    "customer": "Customer", "items": "Items", "total": "Total (PKR)", "paid": "Paid (PKR)",
+    "status": "Status", "payment": "Payment", "pending": "Pending", "confirmed": "Confirmed",
+    "processing": "Processing", "shipped": "Shipped", "delivered": "Delivered",
+    "cancelled": "Cancelled", "unpaid": "Unpaid", "partial": "Partial",
+    "paidStatus": "Paid", "viewOrder": "View Order", "noOrders": "No orders yet"
+  },
+
+  "app": { "name": "Al-Noor Rice Mills", "tagline": "Premium Quality Rice, Direct from Mill" }
 }

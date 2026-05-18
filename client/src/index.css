@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* RTL support */
+[dir="rtl"] { text-align: right; }
+[dir="rtl"] .rtl-flip { transform: scaleX(-1); }
+[dir="rtl"] .flex { flex-direction: row-reverse; }
+[dir="rtl"] .space-x-2 > * + * { margin-left: 0; margin-right: 0.5rem; }
+
+/* Urdu / Arabic font */
+[lang="ur"] body, [lang="ar"] body,
+:lang(ur), :lang(ar) {
+  font-family: 'Noto Nastaliq Urdu', 'Noto Naskh Arabic', 'Segoe UI', system-ui, sans-serif;
+  line-height: 2;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {

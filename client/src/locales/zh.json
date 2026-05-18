@@ -1,0 +1,58 @@
+{
+  "lang": { "en": "English", "ur": "اردو", "ar": "العربية", "pa": "ਪੰਜਾਬੀ", "hi": "हिन्दी", "bn": "বাংলা", "zh": "中文" },
+  "nav": {
+    "shop": "商店", "about": "关于我们", "blog": "博客", "contact": "联系我们",
+    "track_order": "追踪订单", "sign_in": "登录", "register": "注册",
+    "my_account": "我的账户", "logout": "退出登录",
+    "search_placeholder": "搜索大米品种...", "cart": "购物车",
+    "favorites": "收藏", "menu": "菜单"
+  },
+  "hero": {
+    "badge": "优质大米工厂 — 2010年起 · 巴特赫拉, 开普省",
+    "headline1": "来自巴特赫拉工厂",
+    "headline2": "送到您的厨房",
+    "subtext": "优质香米 · 超级内核 · IRRI品种。在巴特赫拉新鲜碾磨。配送全巴基斯坦。",
+    "cta_primary": "购买大米", "cta_secondary": "我们的故事",
+    "trust1": "快速配送", "trust2": "品质保证", "trust3": "新鲜碾磨",
+    "stat1": "年经验", "stat2": "大米品种", "stat3": "满意客户",
+    "eyebrow": "2010年成立 · 巴特赫拉，马拉坎德",
+    "description": "来自斯瓦特山谷的优质香米 — 在庭院晾晒，在麻袋中熟化十二个月，按单碾磨。"
+  },
+  "products": {
+    "section_title": "我们的产品", "add_to_cart": "加入购物车",
+    "out_of_stock": "缺货", "per_kg": "/千克",
+    "grade_premium": "优质", "grade_standard": "标准", "grade_economy": "经济"
+  },
+  "cart": {
+    "title": "您的购物车", "empty": "购物车为空",
+    "total": "总计", "proceed": "去结账"
+  },
+  "checkout": {
+    "title": "结账", "full_name": "全名", "phone": "电话号码",
+    "email": "电子邮件（可选）", "address": "地址", "city": "城市",
+    "cod": "货到付款", "place_order": "下订单", "placing": "正在下单..."
+  },
+  "auth": {
+    "login_title": "欢迎回来", "email": "电子邮件", "password": "密码",
+    "sign_in": "登录", "register": "注册",
+    "loginBtn": "登录", "loggingIn": "登录中...", "invalidCreds": "邮箱或密码错误"
+  },
+  "footer": {
+    "tagline": "优质大米，直接来自工厂",
+    "about": "关于我们", "contact": "联系我们", "track_order": "追踪订单",
+    "rights": "版权所有", "sitemap": "网站地图",
+    "developer": "由 Sameer Gul 开发",
+    "hours_title": "营业时间", "hours": "周一 – 周六", "hours_time": "上午8:00 – 下午6:00 PKT"
+  },
+  "newsletter": {
+    "title": "获取新鲜收获提醒",
+    "placeholder": "您的电子邮件", "btn": "订阅", "success": "订阅成功！"
+  },
+  "common": {
+    "loading": "加载中...", "error": "出现错误",
+    "cancel": "取消", "save": "保存", "search": "搜索",
+    "yes": "是", "no": "否", "pkr": "卢比", "kg": "千克"
+  },
+  "404": { "title": "页面未找到", "go_home": "前往商店", "go_back": "返回" },
+  "app": { "name": "Al-Noor大米工厂", "tagline": "优质大米，直接来自工厂" }
+}
