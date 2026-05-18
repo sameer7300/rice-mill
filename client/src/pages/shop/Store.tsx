@@ -198,7 +198,7 @@ export default function Store() {
 
   return (
     <PageTransition>
-    <div style={{ background: 'var(--cream)', color: 'var(--ink)', fontFamily: 'var(--font-sans)' }}>
+    <div style={{ background: 'var(--cream)', color: 'var(--ink)', fontFamily: 'var(--font-sans)', overflowX: 'hidden' }}>
       <Helmet>
         <title>Al-Noor Rice Mills — Premium Pakistani Rice, Direct from Mill</title>
         <meta name="description" content="Premium Basmati & Super Kernel rice from Al-Noor Rice Mills, Batkhela, Malakand. Sun-dried, aged twelve months in jute, milled to order." />
