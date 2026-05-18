@@ -1,5 +1,4 @@
 import './i18n';
-import i18n from './i18n';
 import React, { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
@@ -57,7 +56,6 @@ import CareersPage from './pages/shop/CareersPage';
 import BlogPage from './pages/shop/BlogPage';
 import BlogPostPage from './pages/shop/BlogPostPage';
 import WholesalePage from './pages/shop/WholesalePage';
-import SitemapPage from './pages/shop/SitemapPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function ScrollToTop() {
@@ -181,7 +179,6 @@ function AppRoutes() {
           <Route path="policies/terms" element={<TermsPage />} />
           <Route path="policies/refund" element={<RefundPolicyPage />} />
           <Route path="policies/shipping" element={<ShippingPolicyPage />} />
-          <Route path="sitemap" element={<SitemapPage />} />
           <Route path="policy" element={<Navigate to="/policies" replace />} />
           <Route path="account" element={<Navigate to="/dashboard" replace />} />
         </Route>
@@ -236,20 +233,6 @@ function AppRoutes() {
   );
 }
 
-function RTLManager() {
-  useEffect(() => {
-    const update = (lang: string) => {
-      const isRTL = ['ur', 'ar'].includes(lang);
-      document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
-      document.documentElement.lang = lang;
-    };
-    update(i18n.language || 'en');
-    i18n.on('languageChanged', update);
-    return () => i18n.off('languageChanged', update);
-  }, []);
-  return null;
-}
-
 export default function App() {
   return (
     <HelmetProvider>
@@ -258,7 +241,6 @@ export default function App() {
           <AuthProvider>
             <LangProvider>
               <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                <RTLManager />
                 <ChatWrapper>
                   <AppRoutes />
                   <Toaster

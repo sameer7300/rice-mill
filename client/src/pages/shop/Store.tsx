@@ -207,15 +207,13 @@ export default function Store() {
       {/* ═══════════════════════════════════════════════════════════════════════
           1. HERO — Editorial split (the default / recommended layout)
           ═══════════════════════════════════════════════════════════════════════ */}
-      <section
-        className="max-md:!grid-cols-1"
-        style={{
-          minHeight: '100svh', position: 'relative',
-          display: 'grid', gridTemplateColumns: '1.1fr 1fr',
-          padding: 'clamp(80px, 10vh, 140px) clamp(16px, 5vw, 60px) clamp(40px, 6vh, 80px)',
-          alignItems: 'center', gap: 'clamp(24px, 4vw, 40px)',
-          background: 'var(--cream)',
-        }}>
+      <section style={{
+        minHeight: '100vh', position: 'relative', overflow: 'hidden',
+        display: 'grid', gridTemplateColumns: '1.1fr 1fr',
+        padding: 'clamp(80px, 10vh, 140px) clamp(24px, 5vw, 60px) clamp(40px, 6vh, 80px)',
+        alignItems: 'center', gap: 'clamp(24px, 4vw, 40px)',
+        background: 'var(--cream)',
+      }}>
         {/* Background glows */}
         <div style={{
           position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
@@ -237,7 +235,7 @@ export default function Store() {
           <Reveal delay={100}>
             <h1 style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(36px, 7vw, 100px)',
+              fontSize: 'clamp(52px, 7vw, 100px)',
               lineHeight: 0.95, letterSpacing: '-0.035em',
               fontWeight: 400,
               margin: '20px 0 26px',
@@ -254,11 +252,11 @@ export default function Store() {
           </Reveal>
 
           <Reveal delay={300}>
-            <div className="flex flex-col sm:flex-row gap-3" style={{ flexWrap: 'wrap' }}>
-              <button className="h-btn h-btn-primary w-full sm:w-auto" onClick={scrollToShop}>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <button className="h-btn h-btn-primary" onClick={scrollToShop}>
                 Shop the harvest
               </button>
-              <Link to="/about" className="h-btn w-full sm:w-auto text-center">
+              <Link to="/about" className="h-btn">
                 Our story
               </Link>
             </div>
@@ -266,14 +264,12 @@ export default function Store() {
 
           {/* KPI strip */}
           <Reveal delay={420}>
-            <div
-              className="max-sm:!grid-cols-2"
-              style={{
-                display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: 16, marginTop: 40, paddingTop: 24,
-                borderTop: '1px solid var(--hairline)',
-                maxWidth: 520,
-              }}>
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: 16, marginTop: 52, paddingTop: 28,
+              borderTop: '1px solid var(--hairline)',
+              maxWidth: 520,
+            }}>
               {[
                 { to: 15,   suffix: '+',   label: 'Years milling' },
                 { to: 3200, suffix: 't',   label: 'Annual capacity' },
@@ -293,8 +289,8 @@ export default function Store() {
           </Reveal>
         </div>
 
-        {/* Right column — 3D rice bag (hidden on mobile) */}
-        <div style={{ position: 'relative', zIndex: 2 }} className="hidden md:block">
+        {/* Right column — 3D rice bag */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
           <Reveal delay={200}>
             <RiceBag3D name="Basmati" variety="SUPER KERNEL" weight={5} mouseFollow={true} />
           </Reveal>

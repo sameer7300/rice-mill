@@ -3,11 +3,9 @@ import ChatWidget from '../../components/ChatWidget';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useLang } from '../../contexts/LangContext';
 import api from '../../api';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import LanguageSwitcher from '../../components/ui/LanguageSwitcher';
 import {
   dropdownVariants, slideRightVariants, slideLeftVariants,
   staggerContainer, staggerFast, staggerItem,
@@ -25,7 +23,6 @@ const formatPKR = (n: number) => `PKR ${n.toLocaleString()}`;
 export default function ShopLayout() {
   const { totalItems, items, subtotal, removeItem, updateQty } = useCart();
   const { user, isCustomer, logout } = useAuth();
-  const { toggleLang, lang } = useLang();
   const navigate = useNavigate();
   const location = useLocation();
   const [cartOpen, setCartOpen]       = useState(false);
@@ -111,7 +108,6 @@ export default function ShopLayout() {
             <a href="tel:+9294612345" className="flex items-center gap-1 hover:text-white transition-colors"><Phone size={11} /> +92-946-123456</a>
           </div>
           <div className="flex items-center gap-4">
-            <LanguageSwitcher variant="compact" />
             <Link to="/track" className="hover:text-white transition-colors">Track Order</Link>
             {!user && <Link to="/login" className="hover:text-white transition-colors">Seller Login</Link>}
           </div>
@@ -363,10 +359,6 @@ export default function ShopLayout() {
                       <Link to="/register" className="block py-2.5 px-3 rounded-xl text-green-700 font-semibold">Create Account</Link>
                     </>
                   )}
-                  <div className="px-3 pt-2">
-                    <p className="text-xs text-gray-400 mb-2">Language</p>
-                    <LanguageSwitcher variant="flags" />
-                  </div>
                 </div>
               </div>
             </motion.div>
@@ -500,21 +492,16 @@ export default function ShopLayout() {
         {/* Bottom bar */}
         <div className="bg-green-950 py-4 px-4">
           <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
-            <div className="text-center md:text-left">
-              <p className="text-xs text-gray-500">
-                © {new Date().getFullYear()} Al-Noor Rice Mills. All rights reserved.
-              </p>
-              <p className="text-xs text-gray-600 mt-0.5">
-                Developed by <a href="https://sameergul.com" target="_blank" rel="noopener noreferrer" className="text-green-500 hover:text-green-400 transition-colors">Sameer Gul</a>
-              </p>
-            </div>
+            <p className="text-xs text-gray-500 text-center md:text-left">
+              © {new Date().getFullYear()} Al-Noor Rice Mills. All rights reserved. · Made with ❤️ in Batkhela, Pakistan
+            </p>
             <div className="flex items-center gap-3 flex-wrap justify-center">
               {['COD', 'Bank Transfer', 'EasyPaisa', 'JazzCash'].map(p => (
                 <span key={p} className="text-xs text-gray-400 bg-green-900 px-2.5 py-1 rounded-full">{p}</span>
               ))}
             </div>
             <div className="flex items-center gap-4 flex-wrap justify-center">
-              {[['Privacy', '/policies/privacy'], ['Terms', '/policies/terms'], ['Refund', '/policies/refund'], ['Shipping', '/policies/shipping'], ['Sitemap', '/sitemap']].map(([l, h]) => (
+              {[['Privacy', '/policies/privacy'], ['Terms', '/policies/terms'], ['Refund', '/policies/refund'], ['Shipping', '/policies/shipping'], ['Sitemap', '/sitemap.xml']].map(([l, h]) => (
                 <Link key={l} to={h} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">{l}</Link>
               ))}
             </div>

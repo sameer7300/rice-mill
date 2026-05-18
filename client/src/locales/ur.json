@@ -1,90 +1,152 @@
 {
-  "lang": { "en": "English", "ur": "اردو", "ar": "العربية", "pa": "ਪੰਜਾਬੀ", "hi": "हिन्दी", "bn": "বাংলা", "zh": "中文" },
+  "app": {
+    "name": "چاول مل مینجمنٹ",
+    "tagline": "پاکستان کا سمارٹ رائس مل سسٹم"
+  },
   "nav": {
-    "shop": "دکان", "about": "ہمارے بارے میں", "blog": "بلاگ", "contact": "رابطہ",
-    "track_order": "آرڈر ٹریک کریں", "seller_login": "سیلر لاگ ان", "sign_in": "سائن ان",
-    "register": "رجسٹر", "my_account": "میرا اکاؤنٹ", "logout": "لاگ آؤٹ",
-    "search_placeholder": "چاول کی اقسام تلاش کریں...", "cart": "کارٹ",
-    "favorites": "پسندیدہ", "menu": "مینو", "dashboard": "ڈیش بورڈ",
-    "inventory": "انوینٹری", "mill": "مل آپریشنز", "orders": "آرڈرز",
-    "customers": "گاہک", "suppliers": "سپلائرز", "finance": "فنانس", "users": "صارفین"
-  },
-  "hero": {
-    "badge": "پریمیم رائس مل 2010 سے · بٹخیلہ، کے پی کے",
-    "headline1": "بٹخیلہ کی مل سے", "headline2": "آپ کے گھر تک",
-    "subtext": "پریمیم باسمتی · سپر کرنل · آئی آر آر آئی اقسام۔ بٹخیلہ، ملاکنڈ میں تازہ ملنگ۔ پورے پاکستان میں ترسیل۔",
-    "cta_primary": "چاول خریدیں", "cta_secondary": "ہماری کہانی",
-    "trust1": "تیز ترسیل", "trust2": "معیار کی ضمانت", "trust3": "تازہ پسا ہوا",
-    "scroll": "نیچے دیکھیں", "stat1": "سال کا تجربہ", "stat2": "چاول کی اقسام", "stat3": "خوش گاہک",
-    "eyebrow": "قائم ایم ایم ایکس · بٹخیلہ، ملاکنڈ",
-    "tagline": "چاول، پہاڑوں کی", "tagline_em": "صبر", "tagline2": "سے پسا ہوا۔",
-    "description": "سوات ویلی سے پریمیم باسمتی اور ورثہ اناج — کھلے صحن میں دھوپ میں سکھایا، بارہ مہینے جوٹ میں پکایا، آرڈر پر پسا ہوا۔"
-  },
-  "ticker": {
-    "item1": "PKR 10,000 سے اوپر مفت ترسیل", "item2": "دوپہر 2 بجے سے پہلے اسی دن روانگی",
-    "item3": "پریمیم باسمتی — فصل 2025", "item4": "فون پر آرڈر: ‎+92-946-123456",
-    "item5": "ہر آرڈر پر لائلٹی پوائنٹس کمائیں", "item6": "پورے پاکستان میں ترسیل"
-  },
-  "filters": {
-    "search": "چاول تلاش کریں...", "all_grades": "تمام گریڈ", "all_varieties": "تمام اقسام",
-    "featured": "نمایاں", "more_filters": "مزید فلٹر", "price_range": "قیمت کی حد",
-    "availability": "صرف موجودہ اسٹاک", "min_order": "کم از کم آرڈر",
-    "sort_by": "ترتیب دیں", "clear_all": "سب صاف کریں",
-    "sort_featured": "نمایاں", "sort_price_asc": "قیمت: کم سے زیادہ",
-    "sort_price_desc": "قیمت: زیادہ سے کم", "sort_newest": "نئے ترین"
-  },
-  "products": {
-    "section_title": "ہماری مصنوعات", "add_to_cart": "کارٹ میں شامل کریں",
-    "out_of_stock": "اسٹاک ختم", "min_order": "کم از کم آرڈر", "per_kg": "/کلو",
-    "grade_premium": "پریمیم", "grade_standard": "معیاری", "grade_economy": "کفایتی",
-    "no_products": "کوئی مصنوعات نہیں ملیں", "shop_harvest": "فصل خریدیں"
-  },
-  "cart": {
-    "title": "آپ کا کارٹ", "empty": "آپ کا کارٹ خالی ہے",
-    "subtotal": "ذیلی کل", "shipping": "ترسیل", "free_shipping": "مفت ترسیل",
-    "total": "مجموعی", "proceed": "چیک آؤٹ کریں", "continue": "خریداری جاری رکھیں",
-    "free_above": "PKR سے اوپر مفت ترسیل"
-  },
-  "checkout": {
-    "title": "چیک آؤٹ", "contact": "رابطہ کی معلومات", "delivery": "ترسیل کا پتہ",
-    "payment": "ادائیگی کا طریقہ", "order_summary": "آرڈر کا خلاصہ",
-    "full_name": "پورا نام", "phone": "فون نمبر", "email": "ای میل (اختیاری)",
-    "address": "گلی کا پتہ", "city": "شہر",
-    "cod": "کیش آن ڈیلیوری", "bank": "بینک ٹرانسفر",
-    "place_order": "آرڈر دیں", "placing": "آرڈر دیا جا رہا ہے..."
+    "dashboard": "ڈیش بورڈ",
+    "inventory": "انوینٹری",
+    "mill": "مل آپریشنز",
+    "orders": "آرڈرز",
+    "customers": "گاہک",
+    "suppliers": "سپلائرز",
+    "finance": "مالیات",
+    "users": "صارفین",
+    "logout": "لاگ آؤٹ"
   },
   "auth": {
-    "login_title": "خوش آمدید", "login_sub": "اپنے اکاؤنٹ میں سائن ان کریں",
-    "email": "ای میل", "password": "پاس ورڈ", "forgot": "پاس ورڈ بھول گئے؟",
-    "sign_in": "سائن ان", "signing_in": "سائن ان ہو رہا ہے...",
-    "no_account": "اکاؤنٹ نہیں ہے؟", "register": "رجسٹر",
-    "register_title": "اکاؤنٹ بنائیں", "full_name": "پورا نام",
-    "loginBtn": "سائن ان", "loggingIn": "سائن ان ہو رہا ہے...", "invalidCreds": "غلط ای میل یا پاس ورڈ"
+    "login": "لاگ ان",
+    "email": "ای میل",
+    "password": "پاس ورڈ",
+    "loginBtn": "سائن ان کریں",
+    "loggingIn": "لاگ ان ہو رہا ہے...",
+    "invalidCreds": "غلط ای میل یا پاس ورڈ"
   },
-  "footer": {
-    "tagline": "پریمیم معیاری چاول، مل سے براہ راست",
-    "shop_heading": "دکان", "company_heading": "کمپنی", "support_heading": "سپورٹ",
-    "about": "ہمارے بارے میں", "blog": "بلاگ", "careers": "کیریئر",
-    "contact": "رابطہ کریں", "track_order": "آرڈر ٹریک کریں",
-    "rights": "جملہ حقوق محفوظ ہیں", "sitemap": "سائٹ میپ",
-    "developer": "تیار کردہ سمیر گل",
-    "hours_title": "کاروباری اوقات", "hours": "پیر – ہفتہ", "hours_time": "صبح 8:00 – شام 6:00 PKT"
+  "dashboard": {
+    "welcome": "خوش آمدید",
+    "totalPaddy": "کل دھان اسٹاک",
+    "totalRice": "کل چاول اسٹاک",
+    "totalOrders": "کل آرڈرز",
+    "pendingOrders": "زیر التواء آرڈرز",
+    "revenue": "کل آمدنی",
+    "profit": "خالص منافع",
+    "recentOrders": "حالیہ آرڈرز",
+    "millStatus": "مل کی حالت",
+    "quickActions": "فوری اقدامات"
   },
-  "newsletter": {
-    "title": "تازہ فصل کے الرٹس حاصل کریں", "sub": "تازہ فصل آنے پر پہلے جانیں",
-    "placeholder": "آپ کی ای میل", "btn": "سبسکرائب کریں",
-    "success": "آپ سبسکرائب ہو گئے!", "disclaimer": "کوئی اسپام نہیں۔"
+  "inventory": {
+    "title": "انوینٹری",
+    "paddyStock": "دھان اسٹاک",
+    "riceStock": "چاول اسٹاک",
+    "addPaddy": "دھان شامل کریں",
+    "addRice": "چاول شامل کریں",
+    "variety": "قسم",
+    "quantity": "مقدار (کلو)",
+    "grade": "گریڈ",
+    "price": "قیمت/کلو (PKR)",
+    "supplier": "سپلائر",
+    "receivedDate": "موصولہ تاریخ",
+    "totalKg": "کل کلو",
+    "noStock": "ابھی کوئی اسٹاک نہیں"
+  },
+  "mill": {
+    "title": "مل آپریشنز",
+    "batches": "ملنگ بیچز",
+    "newBatch": "نیا بیچ",
+    "batchNo": "بیچ نمبر",
+    "paddyIn": "دھان ان پٹ (کلو)",
+    "riceOut": "چاول آؤٹ پٹ (کلو)",
+    "yield": "پیداوار %",
+    "status": "حالت",
+    "pending": "زیر التواء",
+    "inProgress": "جاری ہے",
+    "completed": "مکمل",
+    "startMilling": "ملنگ شروع کریں",
+    "completeBatch": "بیچ مکمل کریں",
+    "avgYield": "اوسط پیداوار"
+  },
+  "orders": {
+    "title": "آرڈرز",
+    "newOrder": "نیا آرڈر",
+    "orderNo": "آرڈر نمبر",
+    "customer": "گاہک",
+    "items": "اشیاء",
+    "total": "کل (PKR)",
+    "paid": "ادا شدہ (PKR)",
+    "status": "حالت",
+    "payment": "ادائیگی",
+    "pending": "زیر التواء",
+    "confirmed": "تصدیق شدہ",
+    "processing": "پروسیسنگ",
+    "shipped": "روانہ",
+    "delivered": "پہنچ گیا",
+    "cancelled": "منسوخ",
+    "unpaid": "غیر ادا شدہ",
+    "partial": "جزوی",
+    "paidStatus": "ادا شدہ",
+    "viewOrder": "آرڈر دیکھیں",
+    "noOrders": "ابھی کوئی آرڈر نہیں"
+  },
+  "customers": {
+    "title": "گاہک",
+    "addCustomer": "گاہک شامل کریں",
+    "businessName": "کاروبار کا نام",
+    "contact": "رابطہ شخص",
+    "phone": "فون",
+    "address": "پتہ",
+    "creditLimit": "کریڈٹ لمٹ (PKR)",
+    "totalOrders": "کل آرڈرز",
+    "noCustomers": "ابھی کوئی گاہک نہیں"
+  },
+  "suppliers": {
+    "title": "سپلائرز",
+    "addSupplier": "سپلائر شامل کریں",
+    "businessName": "کاروبار کا نام",
+    "contact": "رابطہ شخص",
+    "phone": "فون",
+    "address": "پتہ",
+    "recordPurchase": "خریداری ریکارڈ کریں",
+    "noSuppliers": "ابھی کوئی سپلائر نہیں"
+  },
+  "finance": {
+    "title": "مالیات",
+    "revenue": "آمدنی",
+    "expenses": "اخراجات",
+    "profit": "منافع",
+    "addExpense": "خرچہ شامل کریں",
+    "category": "زمرہ",
+    "amount": "رقم (PKR)",
+    "description": "تفصیل",
+    "date": "تاریخ",
+    "electricity": "بجلی",
+    "maintenance": "مرمت",
+    "labour": "مزدوری",
+    "transport": "نقل و حمل",
+    "other": "دیگر",
+    "monthlyRevenue": "ماہانہ آمدنی",
+    "totalProfit": "کل منافع",
+    "purchaseCosts": "خریداری لاگت"
   },
   "common": {
-    "loading": "لوڈ ہو رہا ہے...", "error": "کچھ غلط ہو گیا", "retry": "دوبارہ کوشش",
-    "back": "واپس", "cancel": "منسوخ", "save": "محفوظ کریں", "delete": "حذف",
-    "edit": "ترمیم", "close": "بند کریں", "search": "تلاش", "yes": "ہاں", "no": "نہیں",
-    "pkr": "PKR", "kg": "کلو", "per_kg": "/کلو", "noData": "کوئی ڈیٹا دستیاب نہیں", "actions": "اعمال"
-  },
-  "404": { "title": "صفحہ نہیں ملا", "message": "جس صفحے کی آپ تلاش کر رہے ہیں وہ موجود نہیں۔", "go_home": "دکان پر جائیں", "go_back": "واپس جائیں" },
-  "app": { "name": "النور رائس ملز", "tagline": "پریمیم معیاری چاول، مل سے براہ راست" },
-  "dashboard": { "welcome": "خوش آمدید", "totalPaddy": "کل پیڈی اسٹاک", "totalRice": "کل چاول اسٹاک", "totalOrders": "کل آرڈرز", "revenue": "کل آمدنی", "profit": "خالص منافع", "recentOrders": "حالیہ آرڈرز", "millStatus": "مل کی حالت", "quickActions": "فوری اقدامات" },
-  "orders": { "title": "آرڈرز", "newOrder": "نیا آرڈر", "orderNo": "آرڈر نمبر", "customer": "گاہک", "total": "کل (PKR)", "status": "حالت", "payment": "ادائیگی", "pending": "زیر التوا", "confirmed": "تصدیق شدہ", "processing": "پروسیسنگ", "shipped": "روانہ", "delivered": "تحویل", "cancelled": "منسوخ", "unpaid": "غیر ادا شدہ", "partial": "جزوی", "paidStatus": "ادا شدہ", "noOrders": "ابھی کوئی آرڈر نہیں" },
-  "inventory": { "title": "انوینٹری", "paddyStock": "پیڈی اسٹاک", "riceStock": "چاول اسٹاک", "variety": "قسم", "quantity": "مقدار (کلو)", "grade": "گریڈ", "price": "قیمت/کلو", "noStock": "ابھی کوئی اسٹاک نہیں" },
-  "mill": { "title": "مل آپریشنز", "newBatch": "نیا بیچ", "yield": "پیداوار %", "status": "حالت", "pending": "زیر التوا", "inProgress": "جاری", "completed": "مکمل", "avgYield": "اوسط پیداوار" }
+    "save": "محفوظ کریں",
+    "cancel": "منسوخ",
+    "edit": "ترمیم",
+    "delete": "حذف",
+    "view": "دیکھیں",
+    "search": "تلاش...",
+    "loading": "لوڈ ہو رہا ہے...",
+    "noData": "کوئی ڈیٹا نہیں",
+    "confirm": "تصدیق کریں",
+    "yes": "ہاں",
+    "no": "نہیں",
+    "pkr": "PKR",
+    "kg": "کلو",
+    "actions": "اقدامات",
+    "createdAt": "تاریخ",
+    "name": "نام",
+    "email": "ای میل",
+    "role": "کردار",
+    "active": "فعال",
+    "inactive": "غیر فعال"
+  }
 }
