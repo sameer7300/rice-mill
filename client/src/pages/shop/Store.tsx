@@ -207,13 +207,15 @@ export default function Store() {
       {/* ═══════════════════════════════════════════════════════════════════════
           1. HERO — Editorial split (the default / recommended layout)
           ═══════════════════════════════════════════════════════════════════════ */}
-      <section style={{
-        minHeight: '100vh', position: 'relative', overflow: 'hidden',
-        display: 'grid', gridTemplateColumns: '1.1fr 1fr',
-        padding: 'clamp(80px, 10vh, 140px) clamp(24px, 5vw, 60px) clamp(40px, 6vh, 80px)',
-        alignItems: 'center', gap: 'clamp(24px, 4vw, 40px)',
-        background: 'var(--cream)',
-      }}>
+      <section
+        className="max-md:!grid-cols-1"
+        style={{
+          minHeight: '100svh', position: 'relative',
+          display: 'grid', gridTemplateColumns: '1.1fr 1fr',
+          padding: 'clamp(80px, 10vh, 140px) clamp(16px, 5vw, 60px) clamp(40px, 6vh, 80px)',
+          alignItems: 'center', gap: 'clamp(24px, 4vw, 40px)',
+          background: 'var(--cream)',
+        }}>
         {/* Background glows */}
         <div style={{
           position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
@@ -235,7 +237,7 @@ export default function Store() {
           <Reveal delay={100}>
             <h1 style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(52px, 7vw, 100px)',
+              fontSize: 'clamp(36px, 7vw, 100px)',
               lineHeight: 0.95, letterSpacing: '-0.035em',
               fontWeight: 400,
               margin: '20px 0 26px',
@@ -252,11 +254,11 @@ export default function Store() {
           </Reveal>
 
           <Reveal delay={300}>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <button className="h-btn h-btn-primary" onClick={scrollToShop}>
+            <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+              <button className="h-btn h-btn-primary w-full sm:w-auto" onClick={scrollToShop}>
                 Shop the harvest
               </button>
-              <Link to="/about" className="h-btn">
+              <Link to="/about" className="h-btn w-full sm:w-auto text-center">
                 Our story
               </Link>
             </div>
@@ -264,12 +266,14 @@ export default function Store() {
 
           {/* KPI strip */}
           <Reveal delay={420}>
-            <div style={{
-              display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: 16, marginTop: 52, paddingTop: 28,
-              borderTop: '1px solid var(--hairline)',
-              maxWidth: 520,
-            }}>
+            <div
+              className="max-sm:!grid-cols-2"
+              style={{
+                display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: 16, marginTop: 40, paddingTop: 24,
+                borderTop: '1px solid var(--hairline)',
+                maxWidth: 520,
+              }}>
               {[
                 { to: 15,   suffix: '+',   label: 'Years milling' },
                 { to: 3200, suffix: 't',   label: 'Annual capacity' },
@@ -289,8 +293,8 @@ export default function Store() {
           </Reveal>
         </div>
 
-        {/* Right column — 3D rice bag */}
-        <div style={{ position: 'relative', zIndex: 2 }}>
+        {/* Right column — 3D rice bag (hidden on mobile) */}
+        <div style={{ position: 'relative', zIndex: 2 }} className="hidden md:block">
           <Reveal delay={200}>
             <RiceBag3D name="Basmati" variety="SUPER KERNEL" weight={5} mouseFollow={true} />
           </Reveal>
@@ -318,7 +322,7 @@ export default function Store() {
       {/* ═══════════════════════════════════════════════════════════════════════
           3. CATALOGUE — filter + product grid
           ═══════════════════════════════════════════════════════════════════════ */}
-      <section ref={shopRef} id="products" style={{ padding: 'calc(120px * var(--density)) clamp(24px, 5vw, 60px)', maxWidth: 1440, margin: '0 auto' }}>
+      <section ref={shopRef} id="products" style={{ padding: 'calc(80px * var(--density)) clamp(16px, 5vw, 60px)', maxWidth: 1440, margin: '0 auto' }}>
 
         {/* Section head */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'clamp(24px, 5vw, 80px)', alignItems: 'end', marginBottom: 56 }}
@@ -339,7 +343,8 @@ export default function Store() {
         </div>
 
         {/* Filter row */}
-        <div style={{ borderTop: '1px solid var(--hairline)', borderBottom: '1px solid var(--hairline)', padding: '16px 0', marginBottom: 48, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ borderTop: '1px solid var(--hairline)', borderBottom: '1px solid var(--hairline)', padding: '16px 0', marginBottom: 48 }}
+          className="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
           {/* Filter chips */}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', flex: 1 }}>
             {[
@@ -369,14 +374,14 @@ export default function Store() {
             ))}
           </div>
           {/* Meta / controls */}
-          <div style={{ display: 'flex', gap: 20, alignItems: 'center', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--mute)', flexShrink: 0 }}>
-            {!loading && <span>{total} {total === 1 ? 'variety' : 'varieties'}</span>}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className="flex flex-wrap items-center gap-2" style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--mute)', flexShrink: 0 }}>
+            {!loading && <span className="hidden sm:inline">{total} {total === 1 ? 'variety' : 'varieties'}</span>}
+            <div className="flex flex-wrap items-center gap-2">
               <div style={{ position: 'relative' }}>
                 <Search size={12} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--mute)' }} />
                 <input value={search} onChange={e => setParam('q', e.target.value)}
                   placeholder="Search..."
-                  style={{ paddingLeft: 28, paddingRight: 10, paddingTop: 6, paddingBottom: 6, background: 'transparent', border: '1px solid var(--hairline)', fontSize: 11, letterSpacing: '0.1em', outline: 'none', fontFamily: 'var(--font-mono)', color: 'var(--ink)', width: 140 }} />
+                  style={{ paddingLeft: 28, paddingRight: 10, paddingTop: 6, paddingBottom: 6, background: 'transparent', border: '1px solid var(--hairline)', fontSize: 11, letterSpacing: '0.1em', outline: 'none', fontFamily: 'var(--font-mono)', color: 'var(--ink)', width: '100%', minWidth: 110, maxWidth: 160 }} />
               </div>
               <select value={sortBy} onChange={e => setParam('sort', e.target.value)}
                 style={{ background: 'transparent', border: '1px solid var(--hairline)', padding: '6px 10px', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink)', outline: 'none', cursor: 'pointer' }}>
@@ -400,7 +405,7 @@ export default function Store() {
           {filtersOpen && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
               style={{ overflow: 'hidden', marginBottom: 24 }}>
-              <div style={{ background: 'var(--cream-2)', border: '1px solid var(--hairline)', padding: 20, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+              <div className="max-sm:!grid-cols-2 max-xs:!grid-cols-1" style={{ background: 'var(--cream-2)', border: '1px solid var(--hairline)', padding: 20, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
                 {[['Min Price/kg (₨)', 'minPrice', 'number'], ['Max Price/kg (₨)', 'maxPrice', 'number']].map(([label, key, type]) => (
                   <div key={key as string}>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--mute)', marginBottom: 8 }}>{label}</div>
@@ -443,7 +448,7 @@ export default function Store() {
 
         {/* Product grid */}
         {loading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          <div className="max-lg:!grid-cols-2 max-sm:!grid-cols-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} style={{ background: 'var(--paper)', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)' }}>
                 <div style={{ aspectRatio: '4/5', background: 'var(--cream-2)', animation: 'pulse 1.5s ease-in-out infinite' }} />
@@ -689,7 +694,7 @@ export default function Store() {
           </div>
 
           {/* Right visual + quote */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="max-sm:!grid-cols-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <Reveal>
               <div style={{ aspectRatio: '4/5', borderRadius: 'var(--radius)', overflow: 'hidden', position: 'relative' }}>
                 <img src="/WAREHOUSE · 25KG SACKS.png" alt="Warehouse 25kg rice sacks"
@@ -699,7 +704,7 @@ export default function Store() {
               </div>
             </Reveal>
             <Reveal delay={120}>
-              <div style={{ aspectRatio: '4/5', borderRadius: 'var(--radius)', overflow: 'hidden', position: 'relative', marginTop: 60 }}>
+              <div className="max-sm:!mt-0" style={{ aspectRatio: '4/5', borderRadius: 'var(--radius)', overflow: 'hidden', position: 'relative', marginTop: 60 }}>
                 <img src="/MILL · COURTYARD · DAWN.png" alt="Mill courtyard at dawn"
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 50%)' }} />
@@ -904,12 +909,14 @@ export default function Store() {
       <section style={{ padding: '0 clamp(24px, 5vw, 60px) calc(140px * var(--density))' }}>
         <div style={{ maxWidth: 1440, margin: '0 auto' }}>
           <Reveal>
-            <div style={{
-              background: 'var(--paddy-deep)', color: 'var(--cream)',
-              borderRadius: 'var(--radius-lg)', padding: 'clamp(40px, 6vw, 80px) clamp(32px, 5vw, 60px)',
-              display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 'clamp(32px, 5vw, 80px)', alignItems: 'center',
-              position: 'relative', overflow: 'hidden',
-            }}>
+            <div
+              className="max-md:!grid-cols-1"
+              style={{
+                background: 'var(--paddy-deep)', color: 'var(--cream)',
+                borderRadius: 'var(--radius-lg)', padding: 'clamp(36px, 6vw, 80px) clamp(24px, 5vw, 60px)',
+                display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 'clamp(28px, 5vw, 80px)', alignItems: 'center',
+                position: 'relative', overflow: 'hidden',
+              }}>
               {/* Saffron glow */}
               <div style={{ position: 'absolute', right: '-10%', top: '-30%', width: '60%', aspectRatio: '1', background: 'radial-gradient(circle, color-mix(in srgb, var(--saffron) 28%, transparent), transparent 60%)', pointerEvents: 'none' }} />
 
@@ -926,7 +933,7 @@ export default function Store() {
                 <p style={{ fontSize: 16, lineHeight: 1.6, color: 'rgba(255,255,255,0.82)', marginBottom: 24 }}>
                   Harvest reports, recipes, occasional discounts on bulk orders. No spam — one email, first Saturday of every month.
                 </p>
-                <form style={{ display: 'flex', gap: 8 }} onSubmit={async e => {
+                <form className="flex flex-col sm:flex-row gap-2" onSubmit={async e => {
                   e.preventDefault();
                   const email = (e.target as any).email.value;
                   if (!email) return;
@@ -956,7 +963,8 @@ export default function Store() {
           Compare floating bar
           ═══════════════════════════════════════════════════════════════════════ */}
       {compareIds.length > 0 && (
-        <div style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 50, display: 'flex', alignItems: 'center', gap: 14, background: 'var(--ink)', color: 'var(--cream)', padding: '14px 22px', boxShadow: '0 12px 40px rgba(0,0,0,0.25)' }}>
+        <div className="max-sm:left-3 max-sm:right-3 max-sm:!transform-none max-sm:justify-between"
+          style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 50, display: 'flex', alignItems: 'center', gap: 14, background: 'var(--ink)', color: 'var(--cream)', padding: '12px 18px', boxShadow: '0 12px 40px rgba(0,0,0,0.25)', borderRadius: 8 }}>
           <GitCompare size={15} style={{ color: 'var(--saffron)' }} />
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase' }}>{compareIds.length} selected</span>
           {compareIds.length >= 2 && (
