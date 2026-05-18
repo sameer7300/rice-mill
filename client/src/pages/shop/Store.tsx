@@ -196,6 +196,18 @@ export default function Store() {
   const shopRef = useRef<HTMLElement>(null);
   const scrollToShop = () => shopRef.current?.scrollIntoView({ behavior: 'smooth' });
 
+  // ── Product pagination ────────────────────────────────────────────────────
+  const PROD_PAGE_SIZE = 16;
+  const prodTotalPages = Math.ceil(products.length / PROD_PAGE_SIZE);
+  const visibleProds = products.slice(prodPage * PROD_PAGE_SIZE, (prodPage + 1) * PROD_PAGE_SIZE);
+  const slideVariants = {
+    enter:  (dir: number) => ({ x: dir > 0 ? '80%' : '-80%', opacity: 0 }),
+    center: { x: 0, opacity: 1, transition: { type: 'spring' as const, damping: 28, stiffness: 220 } },
+    exit:   (dir: number) => ({ x: dir > 0 ? '-80%' : '80%', opacity: 0, transition: { duration: 0.18 } }),
+  };
+  const goNext = () => { setSlideDir(1); setProdPage(p => Math.min(p + 1, prodTotalPages - 1)); };
+  const goPrev = () => { setSlideDir(-1); setProdPage(p => Math.max(p - 1, 0)); };
+
   return (
     <PageTransition>
     <div style={{ background: 'var(--cream)', color: 'var(--ink)', fontFamily: 'var(--font-sans)', overflowX: 'hidden' }}>
@@ -447,21 +459,7 @@ export default function Store() {
         )}
 
         {/* Product grid — 4 cols desktop / 2 cols mobile, 16-per-page with slide */}
-        {(() => {
-          const PAGE_SIZE = 16;
-          const totalPages = Math.ceil(products.length / PAGE_SIZE);
-          const visibleProds = products.slice(prodPage * PAGE_SIZE, (prodPage + 1) * PAGE_SIZE);
-          const slideVariants = {
-            enter:  (dir: number) => ({ x: dir > 0 ? '80%' : '-80%', opacity: 0 }),
-            center: { x: 0, opacity: 1, transition: { type: 'spring' as const, damping: 28, stiffness: 220 } },
-            exit:   (dir: number) => ({ x: dir > 0 ? '-80%' : '80%', opacity: 0, transition: { duration: 0.18 } }),
-          };
-          const goNext = () => { setSlideDir(1); setProdPage(p => Math.min(p + 1, totalPages - 1)); };
-          const goPrev = () => { setSlideDir(-1); setProdPage(p => Math.max(p - 1, 0)); };
-
-          return (
-            <>
-              <div style={{ overflow: 'hidden', position: 'relative' }}>
+        <div style={{ overflow: 'hidden', position: 'relative' }}>
         {loading ? (
           <div className="max-xl:!grid-cols-3 max-lg:!grid-cols-2 max-sm:!grid-cols-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
             {Array.from({ length: 6 }).map((_, i) => (
@@ -591,36 +589,31 @@ export default function Store() {
                   </article>
                 </Reveal>
               ))}
-            </div>
-
             </motion.div>
             </AnimatePresence>
 
             {/* Page navigation */}
-            {totalPages > 1 && (
+            {prodTotalPages > 1 && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 36, borderTop: '1px solid var(--hairline)', paddingTop: 28 }}>
                 <button onClick={goPrev} disabled={prodPage === 0}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', border: '1px solid var(--hairline)', background: 'transparent', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: prodPage === 0 ? 'not-allowed' : 'pointer', color: prodPage === 0 ? 'var(--hairline)' : 'var(--ink)', transition: 'all 200ms' }}>
+                  style={{ padding: '10px 20px', border: '1px solid var(--hairline)', background: 'transparent', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: prodPage === 0 ? 'not-allowed' : 'pointer', color: prodPage === 0 ? 'var(--hairline)' : 'var(--ink)', transition: 'all 200ms' }}>
                   ← Prev
                 </button>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  {Array.from({ length: totalPages }, (_, i) => (
+                  {Array.from({ length: prodTotalPages }, (_, i) => (
                     <button key={i} onClick={() => { setSlideDir(i > prodPage ? 1 : -1); setProdPage(i); }}
                       style={{ width: i === prodPage ? 24 : 8, height: 8, borderRadius: 999, background: i === prodPage ? 'var(--paddy)' : 'var(--hairline)', border: 'none', cursor: 'pointer', transition: 'all 300ms', padding: 0 }} />
                   ))}
                 </div>
-                <button onClick={goNext} disabled={prodPage >= totalPages - 1}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', border: '1px solid var(--hairline)', background: 'transparent', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: prodPage >= totalPages - 1 ? 'not-allowed' : 'pointer', color: prodPage >= totalPages - 1 ? 'var(--hairline)' : 'var(--ink)', transition: 'all 200ms' }}>
+                <button onClick={goNext} disabled={prodPage >= prodTotalPages - 1}
+                  style={{ padding: '10px 20px', border: '1px solid var(--hairline)', background: 'transparent', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: prodPage >= prodTotalPages - 1 ? 'not-allowed' : 'pointer', color: prodPage >= prodTotalPages - 1 ? 'var(--hairline)' : 'var(--ink)', transition: 'all 200ms' }}>
                   Next →
                 </button>
               </div>
             )}
           </>
         )}
-              </div>{/* overflow:hidden clip for slide animation */}
-            </>
-          ); // end IIFE return
-        })(/* IIFE */)}
+        </div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════════
