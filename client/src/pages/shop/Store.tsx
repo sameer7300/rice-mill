@@ -121,7 +121,6 @@ export default function Store() {
   const setParam = (key: string, value: string) => {
     const p = new URLSearchParams(searchParams);
     if (value) p.set(key, value); else p.delete(key);
-    p.delete('page');
     setSearchParams(p);
   };
   const clearAll = () => setSearchParams(new URLSearchParams());
@@ -149,7 +148,7 @@ export default function Store() {
       prods.forEach((pr: any) => { qty[pr.id] = pr.minOrderKg || 10; });
       setQuantities(q => ({ ...q, ...qty }));
     } finally { setLoading(false); }
-  }, [search, grade, variety, minPrice, maxPrice, inStockOnly, minOrder, sortBy, page]);
+  }, [search, grade, variety, minPrice, maxPrice, inStockOnly, minOrder, sortBy]);
 
   useEffect(() => {
     fetchProducts();
