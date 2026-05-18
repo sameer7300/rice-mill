@@ -826,10 +826,16 @@ export default function Store() {
         <div style={{ maxWidth: 1440, margin: '0 auto', padding: 'calc(120px * var(--density)) clamp(24px, 5vw, 60px)', display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: 'clamp(40px, 6vw, 80px)', alignItems: 'center' }}
           className="max-lg:!grid-cols-1">
           <Reveal>
-            <div style={{ aspectRatio: '4/5', borderRadius: 'var(--radius-lg)', background: 'linear-gradient(155deg, var(--paddy-soft), var(--paddy-deep))', position: 'relative', overflow: 'hidden', display: 'grid', placeItems: 'center' }}>
-              <div style={{ position: 'absolute', inset: 24, border: '1px solid rgba(255,255,255,0.18)', borderRadius: 'var(--radius)', backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0, rgba(255,255,255,0.06) 1px, transparent 1px, transparent 14px)', display: 'grid', placeItems: 'center' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', background: 'rgba(0,0,0,0.2)', padding: '5px 12px', borderRadius: 999 }}>MILL · COURTYARD · DAWN</span>
-              </div>
+            <div style={{ aspectRatio: '4/5', borderRadius: 'var(--radius-lg)', overflow: 'hidden', position: 'relative' }}>
+              <img
+                src="/MILL · COURTYARD · DAWN, About section.png"
+                alt="Al-Noor Rice Mill courtyard at dawn"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 55%)' }} />
+              <span style={{ position: 'absolute', bottom: 16, left: 16, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.85)', background: 'rgba(0,0,0,0.32)', padding: '5px 12px', borderRadius: 999, backdropFilter: 'blur(4px)' }}>
+                Mill · Courtyard · Dawn
+              </span>
             </div>
           </Reveal>
           <div>
