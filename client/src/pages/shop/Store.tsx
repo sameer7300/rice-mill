@@ -99,6 +99,8 @@ export default function Store() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [prodPage, setProdPage] = useState(0);
+  const [slideDir, setSlideDir] = useState(1);
   const [testimonials, setTestimonials] = useState<any[]>([]);
   const [spotlight, setSpotlight] = useState<any>(null);
   const [favs, setFavs] = useState<string[]>([]);
@@ -144,6 +146,7 @@ export default function Store() {
       const prods = Array.isArray(data) ? data : (data.products || []);
       setProducts(prods);
       setTotal(Array.isArray(data) ? data.length : (data.total || 0));
+      setProdPage(0); // reset to first page on filter change
       const qty: Record<string, number> = {};
       prods.forEach((pr: any) => { qty[pr.id] = pr.minOrderKg || 10; });
       setQuantities(q => ({ ...q, ...qty }));
@@ -443,10 +446,24 @@ export default function Store() {
           </div>
         )}
 
-        {/* Product grid — scrollable when > 6 products */}
-        <div className="product-grid-scroll">
+        {/* Product grid — 4 cols desktop / 2 cols mobile, 16-per-page with slide */}
+        {(() => {
+          const PAGE_SIZE = 16;
+          const totalPages = Math.ceil(products.length / PAGE_SIZE);
+          const visibleProds = products.slice(prodPage * PAGE_SIZE, (prodPage + 1) * PAGE_SIZE);
+          const slideVariants = {
+            enter:  (dir: number) => ({ x: dir > 0 ? '80%' : '-80%', opacity: 0 }),
+            center: { x: 0, opacity: 1, transition: { type: 'spring' as const, damping: 28, stiffness: 220 } },
+            exit:   (dir: number) => ({ x: dir > 0 ? '-80%' : '80%', opacity: 0, transition: { duration: 0.18 } }),
+          };
+          const goNext = () => { setSlideDir(1); setProdPage(p => Math.min(p + 1, totalPages - 1)); };
+          const goPrev = () => { setSlideDir(-1); setProdPage(p => Math.max(p - 1, 0)); };
+
+          return (
+            <>
+              <div style={{ overflow: 'hidden', position: 'relative' }}>
         {loading ? (
-          <div className="max-lg:!grid-cols-2 max-sm:!grid-cols-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          <div className="max-xl:!grid-cols-3 max-lg:!grid-cols-2 max-sm:!grid-cols-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} style={{ background: 'var(--paper)', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)' }}>
                 <div style={{ aspectRatio: '4/5', background: 'var(--cream-2)', animation: 'pulse 1.5s ease-in-out infinite' }} />
@@ -475,9 +492,18 @@ export default function Store() {
           </div>
         ) : (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}
-              className="max-lg:!grid-cols-2 max-sm:!grid-cols-2">
-              {products.map((product, i) => (
+            <AnimatePresence mode="wait" custom={slideDir}>
+            <motion.div
+              key={`prod-page-${prodPage}-${search}-${grade}-${variety}`}
+              custom={slideDir}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}
+              className="max-xl:!grid-cols-3 max-lg:!grid-cols-2 max-sm:!grid-cols-2"
+            >
+              {visibleProds.map((product, i) => (
                 <Reveal key={product.id} delay={Math.min(i, 5) * 60}>
                   <article className="hpc">
                     {/* Image area */}
@@ -567,9 +593,34 @@ export default function Store() {
               ))}
             </div>
 
+            </motion.div>
+            </AnimatePresence>
+
+            {/* Page navigation */}
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 36, borderTop: '1px solid var(--hairline)', paddingTop: 28 }}>
+                <button onClick={goPrev} disabled={prodPage === 0}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', border: '1px solid var(--hairline)', background: 'transparent', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: prodPage === 0 ? 'not-allowed' : 'pointer', color: prodPage === 0 ? 'var(--hairline)' : 'var(--ink)', transition: 'all 200ms' }}>
+                  ← Prev
+                </button>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <button key={i} onClick={() => { setSlideDir(i > prodPage ? 1 : -1); setProdPage(i); }}
+                      style={{ width: i === prodPage ? 24 : 8, height: 8, borderRadius: 999, background: i === prodPage ? 'var(--paddy)' : 'var(--hairline)', border: 'none', cursor: 'pointer', transition: 'all 300ms', padding: 0 }} />
+                  ))}
+                </div>
+                <button onClick={goNext} disabled={prodPage >= totalPages - 1}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', border: '1px solid var(--hairline)', background: 'transparent', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: prodPage >= totalPages - 1 ? 'not-allowed' : 'pointer', color: prodPage >= totalPages - 1 ? 'var(--hairline)' : 'var(--ink)', transition: 'all 200ms' }}>
+                  Next →
+                </button>
+              </div>
+            )}
           </>
         )}
-        </div>{/* end product-grid-scroll */}
+              </div>{/* overflow:hidden clip for slide animation */}
+            </>
+          ); // end IIFE return
+        })(/* IIFE */)}
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════════
