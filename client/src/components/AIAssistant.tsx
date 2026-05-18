@@ -72,7 +72,7 @@ export default function AIAssistant() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setOpen(o => !o)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-br from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white rounded-2xl shadow-2xl flex items-center justify-center transition-colors"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white rounded-2xl shadow-2xl flex items-center justify-center transition-colors"
         title="AI Business Assistant"
       >
         {open ? <ChevronDown size={22} /> : <Bot size={22} />}
@@ -89,7 +89,7 @@ export default function AIAssistant() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="fixed bottom-24 right-6 z-50 w-[380px] max-h-[580px] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-600 flex flex-col overflow-hidden"
+            className="fixed bottom-20 left-2 right-2 sm:left-auto sm:right-6 sm:bottom-24 sm:w-[380px] z-50 max-h-[70vh] sm:max-h-[580px] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-600 flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-green-700 to-green-600 p-4 flex items-center justify-between">
