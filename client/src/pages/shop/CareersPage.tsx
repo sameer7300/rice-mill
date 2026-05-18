@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { useAuth } from '../../contexts/AuthContext';
+import PhoneInput from '../../components/ui/PhoneInput';
 import {
   MapPin, Briefcase, Clock, ChevronDown, Send, Upload, X,
   Users, Star, Zap, Heart, Globe, TrendingUp, CheckCircle2,
@@ -234,7 +236,13 @@ const PERKS = [
 function ApplicationModal({
   job, onClose, onSuccess,
 }: { job: Job; onClose: () => void; onSuccess: () => void }) {
-  const [form, setForm] = useState<AppForm>(EMPTY_FORM);
+  const { user } = useAuth();
+  const [form, setForm] = useState<AppForm>(() => ({
+    ...EMPTY_FORM,
+    name: (user as any)?.name || '',
+    email: (user as any)?.email || '',
+    phone: (user as any)?.phone || '',
+  }));
   const [step, setStep] = useState<1 | 2>(1);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingResume, setUploadingResume] = useState(false);
@@ -341,8 +349,12 @@ function ApplicationModal({
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Phone *</label>
-                    <input className={inp} placeholder="+92 300 1234567" value={form.phone} onChange={e => set('phone', e.target.value)} required />
+                    <PhoneInput
+                      label="Phone"
+                      required
+                      value={form.phone}
+                      onChange={v => set('phone', v)}
+                    />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Expected Salary (PKR/month)</label>

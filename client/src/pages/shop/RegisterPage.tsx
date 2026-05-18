@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PhoneInput from '../../components/ui/PhoneInput';
 import { Link, useNavigate } from 'react-router-dom';
 import { Wheat, Eye, EyeOff, ArrowRight, CheckCircle2, Star, Package, Gift } from 'lucide-react';
 import api from '../../api';
@@ -155,10 +156,12 @@ export default function RegisterPage() {
                         placeholder="you@example.com" />
                     </div>
                     <div className="col-span-2 sm:col-span-1">
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Phone</label>
-                      <input type="tel" value={form.phone} onChange={e => inp('phone', e.target.value)}
-                        className="w-full border-2 border-gray-200 focus:border-green-500 rounded-2xl px-4 py-3 text-sm outline-none transition-colors bg-gray-50 focus:bg-white"
-                        placeholder="03xx-xxxxxxx" />
+                      <PhoneInput
+                        label="Phone"
+                        value={form.phone}
+                        onChange={v => inp('phone', v)}
+                        placeholder="3001234567"
+                      />
                     </div>
                     <div className="col-span-2 sm:col-span-1">
                       <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Referral Code</label>
