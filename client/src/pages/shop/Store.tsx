@@ -116,7 +116,6 @@ export default function Store() {
   const inStockOnly = searchParams.get('inStock') === 'true';
   const minOrder  = searchParams.get('minOrder')|| '';
   const sortBy    = searchParams.get('sort')    || '';
-  const page      = parseInt(searchParams.get('page') || '1');
   const hasActiveFilters = !!(grade || variety || minPrice || maxPrice || inStockOnly || minOrder || search);
 
   const setParam = (key: string, value: string) => {
@@ -140,8 +139,7 @@ export default function Store() {
       if (inStockOnly) p.set('inStock', 'true');
       if (minOrder) p.set('minOrder', minOrder);
       if (sortBy) p.set('sortBy', sortBy);
-      p.set('page', String(page));
-      p.set('limit', '12');
+      p.set('limit', '100');
       const res = await api.get(`/shop/products?${p}`);
       const data = res.data;
       const prods = Array.isArray(data) ? data : (data.products || []);
@@ -446,9 +444,10 @@ export default function Store() {
           </div>
         )}
 
-        {/* Product grid */}
+        {/* Product grid — scrollable when > 6 products */}
+        <div className="product-grid-scroll">
         {loading ? (
-          <div className="max-lg:!grid-cols-2 max-sm:!grid-cols-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          <div className="max-lg:!grid-cols-2 max-sm:!grid-cols-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} style={{ background: 'var(--paper)', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)' }}>
                 <div style={{ aspectRatio: '4/5', background: 'var(--cream-2)', animation: 'pulse 1.5s ease-in-out infinite' }} />
@@ -478,7 +477,7 @@ export default function Store() {
         ) : (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}
-              className="max-lg:!grid-cols-2 max-sm:!grid-cols-1">
+              className="max-lg:!grid-cols-2 max-sm:!grid-cols-2">
               {products.map((product, i) => (
                 <Reveal key={product.id} delay={Math.min(i, 5) * 60}>
                   <article className="hpc">
@@ -569,21 +568,9 @@ export default function Store() {
               ))}
             </div>
 
-            {total > 12 && (
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 48 }}>
-                {page > 1 && (
-                  <button onClick={() => setParam('page', String(page - 1))}
-                    style={{ padding: '10px 20px', border: '1px solid var(--hairline)', background: 'transparent', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: 'pointer', color: 'var(--ink)' }}>← Prev</button>
-                )}
-                <span style={{ padding: '10px 20px', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.12em', color: 'var(--mute)', textTransform: 'uppercase' }}>Page {page} of {Math.ceil(total / 12)}</span>
-                {page * 12 < total && (
-                  <button onClick={() => setParam('page', String(page + 1))}
-                    style={{ padding: '10px 20px', border: '1px solid var(--hairline)', background: 'transparent', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: 'pointer', color: 'var(--ink)' }}>Next →</button>
-                )}
-              </div>
-            )}
           </>
         )}
+        </div>{/* end product-grid-scroll */}
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════════

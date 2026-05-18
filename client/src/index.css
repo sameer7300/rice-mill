@@ -149,6 +149,28 @@ html { scroll-behavior: smooth; }
   --density:     1;
 }
 
+/* ── Scrollable product grid ── */
+.product-grid-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 1500px;   /* ≈ 2 rows on large desktop */
+  padding-right: 4px;
+  scroll-behavior: smooth;
+}
+@media (max-width: 1280px) {
+  .product-grid-scroll { max-height: 1350px; }
+}
+@media (max-width: 1024px) {
+  .product-grid-scroll { max-height: 1200px; }
+}
+@media (max-width: 640px) {
+  .product-grid-scroll { max-height: 820px; }  /* ≈ 2 rows on mobile */
+}
+.product-grid-scroll::-webkit-scrollbar { width: 4px; }
+.product-grid-scroll::-webkit-scrollbar-track { background: var(--hairline); border-radius: 2px; }
+.product-grid-scroll::-webkit-scrollbar-thumb { background: var(--paddy); border-radius: 2px; }
+.product-grid-scroll { scrollbar-width: thin; scrollbar-color: var(--paddy) var(--hairline); }
+
 /* ── Falling grain particles ── */
 .grain-canvas {
   position: absolute; inset: 0; pointer-events: none;
