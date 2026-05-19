@@ -149,22 +149,22 @@ html { scroll-behavior: smooth; }
   --density:     1;
 }
 
-/* ── Scrollable product grid ── */
+/* ── Scrollable product grid (4-col layout) ── */
 .product-grid-scroll {
   overflow-y: auto;
   overflow-x: hidden;
-  max-height: 1500px;   /* ≈ 2 rows on large desktop */
+  max-height: 1200px;   /* ≈ 2 rows at 4-col desktop */
   padding-right: 4px;
   scroll-behavior: smooth;
 }
 @media (max-width: 1280px) {
-  .product-grid-scroll { max-height: 1350px; }
+  .product-grid-scroll { max-height: 1300px; } /* 3-col: cards slightly taller */
 }
 @media (max-width: 1024px) {
-  .product-grid-scroll { max-height: 1200px; }
+  .product-grid-scroll { max-height: 1050px; } /* 2-col tablet */
 }
 @media (max-width: 640px) {
-  .product-grid-scroll { max-height: 820px; }  /* ≈ 2 rows on mobile */
+  .product-grid-scroll { max-height: 740px; }  /* 2-col mobile */
 }
 .product-grid-scroll::-webkit-scrollbar { width: 4px; }
 .product-grid-scroll::-webkit-scrollbar-track { background: var(--hairline); border-radius: 2px; }
