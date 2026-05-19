@@ -1,6 +1,6 @@
 # 🌾 Al-Noor Rice Mills — Management System & E-Commerce Platform
 
-A full-stack, AI-powered business management platform and public e-commerce storefront for **Al-Noor Rice Mills**, Batkhela, Malakand, KPK, Pakistan. Covers everything from paddy procurement and milling to online retail, real-time chat, autonomous AI agents, WhatsApp notifications, and SMTP email.
+A full-stack, AI-powered business management platform and public e-commerce storefront for **Al-Noor Rice Mills**, Batkhela, Malakand, KPK, Pakistan. Covers everything from paddy procurement and milling to online retail, real-time chat, autonomous AI agents, WhatsApp notifications, SMTP email, multi-currency international checkout, IP geolocation, GDPR data requests, cookie consent management, and OTP-verified registration.
 
 ---
 
@@ -36,6 +36,7 @@ A full-stack, AI-powered business management platform and public e-commerce stor
 28. [Navigation UX](#navigation-ux)
 29. [Demo Login Credentials](#demo-login-credentials)
 30. [Key Design Decisions](#key-design-decisions)
+31. [Recent Features (May 2026)](#recent-features-may-2026)
 
 ---
 
@@ -152,7 +153,7 @@ NODE_ENV=development
 # Claude AI — required for AI chat, agents, and insights
 ANTHROPIC_API_KEY=sk-ant-api03-...
 
-# SMTP — Hostinger SSL (emails silently skip if not configured)
+# SMTP — Hostinger SSL (emails silently skip if not set)
 SMTP_HOST=smtp.hostinger.com
 SMTP_PORT=465
 SMTP_SECURE=true
@@ -161,16 +162,21 @@ SMTP_PASS=your_smtp_password
 SMTP_FROM=Al-Noor Rice Mills <ricemill@sameergul.com>
 SMTP_REPLY_TO=ricemill@sameergul.com
 
-# Stripe payments
+# Stripe — multi-currency card payments (worldwide)
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_PUBLISHABLE_KEY=pk_test_...
 
-# WhatsApp — set ENABLED=true + Twilio vars to send real messages
-# WHATSAPP_ENABLED=false means mock mode (logs only, no sends)
+# WhatsApp via UltraMsg (WHATSAPP_ENABLED=false = mock mode / log only)
 WHATSAPP_ENABLED=false
-TWILIO_ACCOUNT_SID=
-TWILIO_AUTH_TOKEN=
-TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
+ULTRAMSG_INSTANCE_ID=instance_xxxxx
+ULTRAMSG_TOKEN=your_ultramsg_token
+
+# ExchangeRate-API — live currency conversion (https://exchangerate-api.com)
+# Supports PKR, USD, EUR, GBP, AED, SAR, CAD, AUD, OMR, QAR, KWD, BHD
+EXCHANGE_RATE_API_KEY=your_key_here
+
+# ipinfo.io — IP geolocation for auto country/currency detection (50k req/month free)
+IPINFO_TOKEN=your_ipinfo_token
 ```
 
 ---
@@ -1048,6 +1054,45 @@ The refresh token (httpOnly cookie, 7 days) handles silent re-authentication aft
 ### Why `mustChangePassword` on auto-created staff accounts?
 Staff accounts created when a job application is accepted use a randomly generated temp password. The `mustChangePassword` flag signals the frontend to prompt a password change on first login, ensuring no staff member permanently uses a system-generated credential.
 
+### Why UltraMsg instead of Twilio?
+UltraMsg links a real WhatsApp Business number to a cloud instance, making programmatic messaging cheaper and more accessible for small businesses than the official Twilio WhatsApp Business API. All sends are fire-and-forget and `WHATSAPP_ENABLED=false` keeps dev noise-free.
+
+### Why ExchangeRate-API + ipinfo.io for multi-currency?
+Both offer generous free tiers (50k geo lookups/month, 1,500 rate calls/month). Rates are cached in-memory for 1 hour; geo lookups are cached in `localStorage` for 24 hours — meaning the second page view is always instant without extra API calls.
+
+### How does the geo-to-currency chain work?
+`TrackingContext` calls `/api/tracking/geo` (ipinfo.io proxy) → stores result in `localStorage` with 24h TTL → fires `window.dispatchEvent(new CustomEvent('alnoor:geo', ...))` → `CurrencyContext` listens for this event and updates the active currency → all components using `useCurrency().format()` re-render with the correct currency. On the next visit the `localStorage` cache is read synchronously, so the currency is correct from the very first render.
+
+### Why a custom event instead of React context for geo→currency?
+`CurrencyContext` sits above `TrackingContext` in the provider tree, so it can't subscribe to TrackingContext as a React context. A `CustomEvent` on `window` crosses this boundary cleanly without circular context dependencies.
+
+### How does OTP registration verification work?
+An in-memory `Map` (per-process, lost on restart) stores 6-digit OTPs with 10-minute TTL, keyed by email or phone. The `/api/auth/send-registration-otp` endpoint sends the OTP via the chosen channel; `/api/auth/register` verifies and deletes it (one-time use). No schema change required.
+
+### How does the GDPR data request system work?
+`GET /api/data-requests/download/basic` compiles profile, orders, addresses, reviews, and loyalty history on demand and streams it as a JSON download — instant and always current. `POST /api/data-requests` (type: full) creates a `DataRequest` record; admin reviews it in `/dashboard/data-requests`, downloads the full export themselves (including IP logs), then marks it as fulfilled within 30 days.
+
 ---
 
-*Built for Al-Noor Rice Mills · Batkhela, Malakand, KPK, Pakistan · Est. 2010*
+## Recent Features (May 2026)
+
+| Feature | Details |
+|---|---|
+| **International shipping** | Admin-configurable shipping zones with base fee + per-kg rate in USD; zone-based shipping calculated at checkout |
+| **Multi-currency** | 12 currencies (PKR, USD, EUR, GBP, AED, SAR, CAD, AUD, OMR, QAR, KWD, BHD); live rates via ExchangeRate-API; persistent in `localStorage` |
+| **IP geolocation** | ipinfo.io proxy; auto-sets country selector, currency, and phone dial code; 24h `localStorage` cache |
+| **International checkout** | International visitors see Card + Bank Wire only; domestic Pakistan sees all 5 payment methods; customs disclaimer shown |
+| **Bank wire transfer** | Admin configures IBAN/SWIFT in Settings; shown to international customers at checkout |
+| **Cookie consent banner** | "Accept Essential Only" / "Accept All" — no full reject; analytics tracking respects consent |
+| **Visitor tracking** | `VisitorSession` + `PageView` DB models; IP, device, browser, pages visited (analytics consent only) |
+| **GDPR data requests** | Customers download basic data instantly; full export (IP logs, activity) requires admin approval within 30 days |
+| **WhatsApp OTP** | Password reset via WhatsApp 6-digit OTP (10-min TTL, stored as `passwordResetToken`); no schema change |
+| **Registration OTP verification** | Choose Email or WhatsApp OTP during signup; in-memory Map stores OTPs with 10-min TTL |
+| **Enhanced policy pages** | Redesigned PolicyLayout with gradient hero, icons, callout boxes, breadcrumbs, updated GDPR content |
+| **HTML sitemap** | `/sitemap` — beautiful categorised page with all routes, auth-aware admin section |
+| **Currency in shop pages** | Store, ProductDetail, Cart drawer, ComparePage, OrderSuccess, AccountPage all use `useCurrency().format()` |
+| **PhoneInput auto-detect** | `defaultIso` prop auto-selects country dial code from geo (e.g. US visitor sees +1, not +92) |
+
+---
+
+*Built for Al-Noor Rice Mills · Batkhela, Malakand, KPK, Pakistan · Est. 2010 · Last updated May 2026*

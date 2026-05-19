@@ -4,8 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, MessageCircle, Package, ArrowRight, Copy, Star, Gift } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PageTransition from '../../components/PageTransition';
-
-const formatPKR = (n: number) => `PKR ${(n || 0).toLocaleString()}`;
+import { useCurrency } from '../../contexts/CurrencyContext';
 
 // ─── Confetti particle
 function Confetti({ color, x, delay }: { color: string; x: number; delay: number }) {
@@ -103,6 +102,8 @@ function TruckAnimation({ show }: { show: boolean }) {
 export default function OrderSuccess() {
   const { orderNumber } = useParams();
   const { state } = useLocation() as any;
+  const { format } = useCurrency();
+  const formatPKR = (n: number) => format(n || 0);
   const order = state?.order;
   const whatsappUrl = state?.whatsappUrl;
   const [showTruck, setShowTruck] = useState(false);

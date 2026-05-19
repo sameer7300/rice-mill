@@ -600,9 +600,25 @@ async function sendNewApplicationNotificationEmail(jobTitle, applicantName, appl
   }).catch(() => {});
 }
 
+async function sendRegistrationOTPEmail(to, name, otp) {
+  const content = `
+    <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#14532d;">Verify Your Account</h2>
+    <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">As-Salamu Alaykum ${name}! Use the code below to complete your registration:</p>
+    <div style="text-align:center;margin:28px 0;">
+      <div style="display:inline-block;background:#f0fdf4;border:2px dashed #16a34a;border-radius:14px;padding:20px 40px;">
+        <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#16a34a;letter-spacing:1px;text-transform:uppercase;">Your OTP</p>
+        <p style="margin:0;font-size:42px;font-weight:900;color:#14532d;letter-spacing:10px;font-family:monospace;">${otp}</p>
+      </div>
+    </div>
+    <p style="margin:0 0 8px;font-size:13px;color:#6b7280;text-align:center;">This code expires in <strong>10 minutes</strong>. Do not share it with anyone.</p>
+    ${warningBox('If you did not request this, you can safely ignore this email.')}`;
+  await sendMail(to, 'Your Registration OTP — Al-Noor Rice Mills', base(content, `Your OTP: ${otp}`));
+}
+
 module.exports = {
   // Primary (new)
   sendWelcomeEmail,
+  sendRegistrationOTPEmail,
   sendOrderConfirmation,
   sendOrderStatusUpdate,
   sendPaymentConfirmation,

@@ -12,7 +12,7 @@ import PageTransition from '../components/PageTransition';
 import ImageUpload from '../components/ui/ImageUpload';
 import MultiImageUpload from '../components/ui/MultiImageUpload';
 
-const TABS = ['overview', 'products', 'discounts', 'email', 'settings', 'pricing-tiers', 'faqs'] as const;
+const TABS = ['overview', 'products', 'discounts', 'email', 'settings', 'shipping', 'pricing-tiers', 'faqs'] as const;
 type Tab = typeof TABS[number];
 
 export default function Ecommerce() {
@@ -59,6 +59,14 @@ export default function Ecommerce() {
   const [faqs, setFaqs] = useState<any[]>([]);
   const [faqModal, setFaqModal] = useState<any>(null);
   const [faqForm, setFaqForm] = useState({ question: '', answer: '', sortOrder: '0', isActive: true });
+
+  // Shipping Zones tab
+  const [shippingZones, setShippingZones] = useState<any[]>([]);
+  const [zoneModal, setZoneModal] = useState<any>(null);
+  const EMPTY_ZONE = { name: '', countries: '', baseFee: '', perKgRate: '', minDays: '5', maxDays: '21', freeAbove: '', isDomestic: false, isActive: true };
+  const [zoneForm, setZoneForm] = useState<any>({ ...EMPTY_ZONE });
+  const [savingZone, setSavingZone] = useState(false);
+
   const [testEmailSending, setTES] = useState(false);
   // Email tab state
   const [emailForm, setEF] = useState({
@@ -103,6 +111,9 @@ export default function Ecommerce() {
     }
     if (tab === 'faqs') {
       api.get('/faq/all').then(r => setFaqs(r.data.data || [])).catch(() => {});
+    }
+    if (tab === 'shipping') {
+      api.get('/shipping/zones/all').then(r => setShippingZones(r.data.data || [])).catch(() => {});
     }
   }, [tab]);
 
@@ -507,6 +518,44 @@ export default function Ecommerce() {
               <label htmlFor="isOpen" className="text-sm font-medium text-gray-700">Store is Open (accepting orders)</label>
             </div>
           </div>
+          {/* Bank Wire Details (for international orders) */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h2 className="font-semibold text-gray-800 flex items-center gap-2">🏦 International Bank Wire Details</h2>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={settings.bankWireEnabled || false}
+                  onChange={e => setSettings((s: any) => ({ ...s, bankWireEnabled: e.target.checked }))}
+                  className="w-4 h-4 accent-green-600" />
+                <span className="font-medium text-gray-700">Enable bank wire option at checkout</span>
+              </label>
+            </div>
+            {settings.bankWireEnabled && (
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="Beneficiary Name">
+                  <input value={settings.bankWireBeneficiary || ''} onChange={e => setSettings((s: any) => ({ ...s, bankWireBeneficiary: e.target.value }))} className={inputCls} placeholder="Al-Noor Rice Mills" />
+                </FormField>
+                <FormField label="Bank Name">
+                  <input value={settings.bankWireBank || ''} onChange={e => setSettings((s: any) => ({ ...s, bankWireBank: e.target.value }))} className={inputCls} placeholder="Habib Bank Limited" />
+                </FormField>
+                <FormField label="IBAN / Account Number">
+                  <input value={settings.bankWireIBAN || ''} onChange={e => setSettings((s: any) => ({ ...s, bankWireIBAN: e.target.value }))} className={inputCls} placeholder="PK36HABB0000123456789012" />
+                </FormField>
+                <FormField label="SWIFT / BIC Code">
+                  <input value={settings.bankWireSWIFT || ''} onChange={e => setSettings((s: any) => ({ ...s, bankWireSWIFT: e.target.value }))} className={inputCls} placeholder="HABBPKKA" />
+                </FormField>
+                <div className="col-span-2">
+                  <FormField label="Additional Instructions for Buyer">
+                    <textarea value={settings.bankWireInstructions || ''} onChange={e => setSettings((s: any) => ({ ...s, bankWireInstructions: e.target.value }))}
+                      className={inputCls + ' resize-none'} rows={2}
+                      placeholder="Use your order number as payment reference. Transfers typically clear in 1–3 business days." />
+                  </FormField>
+                </div>
+              </div>
+            )}
+            {!settings.bankWireEnabled && (
+              <p className="text-sm text-gray-400">Enable to show SWIFT/IBAN wire transfer as a payment option for international customers.</p>
+            )}
+          </div>
           <button type="submit" disabled={savingSettings} className="px-6 py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl font-semibold transition-colors disabled:opacity-60">
             {savingSettings ? 'Saving...' : 'Save Settings'}
           </button>
@@ -670,6 +719,150 @@ export default function Ecommerce() {
               </tbody>
             </table>
           </div>
+        </>
+      )}
+
+      {/* ── SHIPPING ZONES TAB ──────────────────────────────────────────────── */}
+      {tab === 'shipping' && (
+        <>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Shipping Zones</h2>
+              <p className="text-sm text-gray-500 mt-0.5">Define delivery zones, base fees, and per-kg rates. Domestic (Pakistan) uses the store flat rate above.</p>
+            </div>
+            <ActionButton icon={<span>+</span>} label="New Zone" onClick={() => { setZoneForm({ ...EMPTY_ZONE }); setZoneModal('new'); }} />
+          </div>
+
+          {shippingZones.length === 0 ? (
+            <div className="text-center py-16 text-gray-400">
+              <div className="text-5xl mb-3">🌍</div>
+              <p className="font-semibold">No shipping zones yet</p>
+              <p className="text-sm mt-1">Add zones to enable international shipping at checkout.</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    {['Zone', 'Countries', 'Base Fee (USD)', 'Per-kg Rate', 'Delivery', 'Free Above', 'Status', ''].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {shippingZones.map(z => {
+                    let countriesList: string[] = [];
+                    try { countriesList = JSON.parse(z.countries || '[]'); } catch {}
+                    return (
+                      <tr key={z.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 font-semibold text-gray-800">
+                          {z.name}
+                          {z.isDomestic && <span className="ml-2 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">Domestic</span>}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 max-w-[180px]">
+                          <span className="text-xs">
+                            {countriesList.includes('*') ? 'All others (catch-all)' : countriesList.slice(0, 5).join(', ')}{countriesList.length > 5 ? ` +${countriesList.length - 5}` : ''}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 font-mono text-gray-800">${z.baseFee.toFixed(2)}</td>
+                        <td className="px-4 py-3 font-mono text-gray-600">${z.perKgRate.toFixed(3)}/kg</td>
+                        <td className="px-4 py-3 text-gray-600">{z.minDays}–{z.maxDays} days</td>
+                        <td className="px-4 py-3 text-gray-600">{z.freeAbove ? `$${z.freeAbove}` : '—'}</td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${z.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                            {z.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => { setZoneForm({ ...z, countries: Array.isArray(z.countries) ? z.countries.join(', ') : (() => { try { return JSON.parse(z.countries).join(', '); } catch { return z.countries; } })() }); setZoneModal(z); }}
+                              className="text-xs text-blue-600 hover:text-blue-800 font-medium">Edit</button>
+                            <button onClick={async () => { if (!confirm('Delete this zone?')) return; await api.delete(`/shipping/zones/${z.id}`); setShippingZones(prev => prev.filter(x => x.id !== z.id)); toast.success('Zone deleted'); }}
+                              className="text-xs text-red-500 hover:text-red-700 font-medium">Delete</button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Zone modal */}
+          {zoneModal !== null && (
+            <Modal title={zoneModal === 'new' ? 'New Shipping Zone' : `Edit: ${zoneModal.name}`} onClose={() => setZoneModal(null)} size="lg">
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setSavingZone(true);
+                try {
+                  // Parse countries input: comma-separated codes or JSON
+                  const countriesArr = zoneForm.countries.split(',').map((s: string) => s.trim().toUpperCase()).filter(Boolean);
+                  const payload = {
+                    ...zoneForm,
+                    countries: countriesArr,
+                    baseFee: parseFloat(zoneForm.baseFee) || 0,
+                    perKgRate: parseFloat(zoneForm.perKgRate) || 0,
+                    minDays: parseInt(zoneForm.minDays) || 5,
+                    maxDays: parseInt(zoneForm.maxDays) || 21,
+                    freeAbove: zoneForm.freeAbove ? parseFloat(zoneForm.freeAbove) : null,
+                  };
+                  if (zoneModal === 'new') {
+                    const { data } = await api.post('/shipping/zones', payload);
+                    setShippingZones(prev => [...prev, data.data]);
+                    toast.success('Zone created');
+                  } else {
+                    const { data } = await api.put(`/shipping/zones/${zoneModal.id}`, payload);
+                    setShippingZones(prev => prev.map(z => z.id === zoneModal.id ? data.data : z));
+                    toast.success('Zone updated');
+                  }
+                  setZoneModal(null);
+                } catch (err: any) {
+                  toast.error(err.response?.data?.error || 'Save failed');
+                } finally { setSavingZone(false); }
+              }} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="Zone Name *">
+                    <input value={zoneForm.name} onChange={e => setZoneForm((f: any) => ({ ...f, name: e.target.value }))} required className={inputCls} placeholder="Middle East, Europe..." />
+                  </FormField>
+                  <FormField label="Base Fee (USD)">
+                    <input type="number" step="0.01" value={zoneForm.baseFee} onChange={e => setZoneForm((f: any) => ({ ...f, baseFee: e.target.value }))} className={inputCls} placeholder="25.00" />
+                  </FormField>
+                  <FormField label="Per-kg Rate (USD)">
+                    <input type="number" step="0.001" value={zoneForm.perKgRate} onChange={e => setZoneForm((f: any) => ({ ...f, perKgRate: e.target.value }))} className={inputCls} placeholder="0.50" />
+                  </FormField>
+                  <FormField label="Free Shipping Above (USD, optional)">
+                    <input type="number" step="0.01" value={zoneForm.freeAbove} onChange={e => setZoneForm((f: any) => ({ ...f, freeAbove: e.target.value }))} className={inputCls} placeholder="500.00" />
+                  </FormField>
+                  <FormField label="Min Days">
+                    <input type="number" value={zoneForm.minDays} onChange={e => setZoneForm((f: any) => ({ ...f, minDays: e.target.value }))} className={inputCls} />
+                  </FormField>
+                  <FormField label="Max Days">
+                    <input type="number" value={zoneForm.maxDays} onChange={e => setZoneForm((f: any) => ({ ...f, maxDays: e.target.value }))} className={inputCls} />
+                  </FormField>
+                </div>
+                <FormField label="Countries (ISO-2 codes, comma-separated — use * for catch-all)">
+                  <input value={zoneForm.countries} onChange={e => setZoneForm((f: any) => ({ ...f, countries: e.target.value }))} className={inputCls} placeholder="AE, SA, QA, KW, OM, BH  or  * for all others" />
+                </FormField>
+                <div className="flex items-center gap-6">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={zoneForm.isDomestic} onChange={e => setZoneForm((f: any) => ({ ...f, isDomestic: e.target.checked }))} className="w-4 h-4 accent-green-600" />
+                    <span>Domestic zone (Pakistan)</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={zoneForm.isActive} onChange={e => setZoneForm((f: any) => ({ ...f, isActive: e.target.checked }))} className="w-4 h-4 accent-green-600" />
+                    <span>Active</span>
+                  </label>
+                </div>
+                <div className="flex justify-end gap-3 pt-2 border-t">
+                  <button type="button" onClick={() => setZoneModal(null)} className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50">Cancel</button>
+                  <button type="submit" disabled={savingZone} className="px-5 py-2 bg-green-700 hover:bg-green-800 text-white rounded-xl text-sm font-semibold disabled:opacity-60">
+                    {savingZone ? 'Saving...' : zoneModal === 'new' ? 'Create Zone' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+            </Modal>
+          )}
         </>
       )}
 

@@ -6,6 +6,7 @@ import { Helmet } from 'react-helmet-async';
 import api from '../../api';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCurrency } from '../../contexts/CurrencyContext';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { springSmooth, fastTween } from '../../utils/animations';
@@ -134,6 +135,7 @@ function ProductGallery({ product }: { product: any }) {
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const { addItem, items } = useCart();
+  const { format } = useCurrency();
   const { user, isCustomer } = useAuth();
   const [product, setProduct] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
@@ -210,7 +212,7 @@ export default function ProductDetail() {
   };
 
   const inCart = items.some(i => i.productId === id);
-  const formatPKR = (n: number) => `PKR ${n.toLocaleString()}`;
+  const formatPKR = (n: number) => format(n);
 
   // Spec table rows
   const specs = product ? [

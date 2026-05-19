@@ -50,6 +50,7 @@ interface Props {
   className?: string;
   inputClassName?: string;
   label?: string;
+  defaultIso?: string;     // ISO-2 country code to auto-select dial code (e.g. "US")
 }
 
 export default function PhoneInput({
@@ -60,6 +61,7 @@ export default function PhoneInput({
   className = '',
   inputClassName = '',
   label,
+  defaultIso,
 }: Props) {
   const { dialCode: initCode, local: initLocal } = parsePhone(value);
   const [dialCode, setDialCode] = useState(initCode);
@@ -74,6 +76,16 @@ export default function PhoneInput({
     setDialCode(c);
     setLocal(l);
   }, [value]);
+
+  // Auto-select dial code when defaultIso changes (e.g. geo detected)
+  useEffect(() => {
+    if (!defaultIso || local) return; // only apply if phone field is still empty
+    const country = COUNTRIES.find(c => c.iso === defaultIso.toUpperCase());
+    if (country && country.code !== dialCode) {
+      setDialCode(country.code);
+      onChange(buildPhone(country.code, local));
+    }
+  }, [defaultIso]);
 
   useEffect(() => {
     const fn = (e: MouseEvent) => {

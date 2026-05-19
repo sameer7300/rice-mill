@@ -1,6 +1,8 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { auth, requireRole } = require('../middleware/auth');
+const mailer = require('../lib/mailer');
+const wa = require('../lib/whatsapp');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -25,6 +27,12 @@ router.post('/inquiry', async (req, res) => {
         message: message || null
       }
     });
+    // Notify admin via email + WhatsApp (fire-and-forget)
+    mailer.sendWholesaleInquiryEmail(inquiry).catch(() => {});
+    const settings = await prisma.storeSettings.findFirst().catch(() => null);
+    if (settings?.whatsappNumber) {
+      wa.sendWholesaleInquiryWA(inquiry, settings.whatsappNumber).catch(() => {});
+    }
     res.status(201).json({ success: true, data: inquiry, message: 'Your inquiry has been received. We will contact you within 24 hours.' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

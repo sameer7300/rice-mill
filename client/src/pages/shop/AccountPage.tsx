@@ -12,7 +12,8 @@ import {
 import { OrderStatusBadge, PaymentBadge } from '../../components/ui/Badge';
 import { inputCls, selectCls } from '../../components/ui/PageHeader';
 import { useCart } from '../../contexts/CartContext';
-import { formatPKR, formatDate } from '../../utils/export';
+import { useCurrency } from '../../contexts/CurrencyContext';
+import { formatDate } from '../../utils/export';
 
 const TABS = [
   { id: 'orders', label: 'My Orders', icon: <ShoppingBag size={15} /> },
@@ -45,6 +46,7 @@ export default function AccountPage() {
   const { user, logout } = useAuth();
   const { toggleLang, lang } = useLang();
   const { addItem } = useCart();
+  const { format: formatPKR } = useCurrency();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('orders');
 

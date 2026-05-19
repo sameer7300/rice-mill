@@ -50,6 +50,7 @@ model User {
   // Security
   mustChangePassword   Boolean   @default(false)
   refreshTokens        RefreshToken[]
+  dataRequests         DataRequest[]
 }
 
 model Supplier {
@@ -150,6 +151,12 @@ model Order {
   trackingNumber     String?
   estimatedDelivery  DateTime?
   loyaltyPointsEarned Int       @default(0)
+  // International / multi-currency
+  currency        String      @default("PKR")
+  exchangeRate    Float       @default(1)    // PKR per 1 unit of chosen currency
+  countryCode     String?                    // ISO-2 destination country
+  shippingZoneId  String?
+  shippingFee     Float       @default(0)   // shipping charge in PKR stored on order
   createdAt          DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -305,7 +312,32 @@ model StoreSettings {
   notifyStatusUpdate      Boolean  @default(true)
   notifyPayment           Boolean  @default(true)
   notifyLowStock          Boolean  @default(true)
+  // Bank wire transfer details (for international orders)
+  bankWireEnabled     Boolean  @default(false)
+  bankWireBeneficiary String?
+  bankWireBank        String?
+  bankWireIBAN        String?
+  bankWireSWIFT       String?
+  bankWireInstructions String?
   updatedAt               DateTime @updatedAt
+}
+
+// ─── SHIPPING ZONES ───────────────────────────────────────────────────────────
+
+model ShippingZone {
+  id          String   @id @default(cuid())
+  name        String
+  countries   String   @default("[]") // JSON array of ISO-2 codes; ["*"] = catch-all
+  baseFee     Float    @default(0)    // base shipping fee in USD
+  perKgRate   Float    @default(0)    // additional USD per kg
+  minDays     Int      @default(5)
+  maxDays     Int      @default(21)
+  freeAbove   Float?                  // free shipping if subtotal (USD) >= this value
+  isActive    Boolean  @default(true)
+  isDomestic  Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Discount {
@@ -634,6 +666,74 @@ model ChatMessage {
 
   conversation   ChatConversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         User?             @relation(fields: [senderId], references: [id])
+}
+
+// ─── VISITOR TRACKING & PRIVACY ──────────────────────────────────────────────
+
+model VisitorSession {
+  id          String   @id @default(cuid())
+  sessionId   String   @unique          // UUID stored in cookie
+  userId      String?                   // null for anonymous
+  ipAddress   String?
+  country     String?
+  countryCode String?
+  city        String?
+  region      String?
+  latitude    Float?
+  longitude   Float?
+  isp         String?
+  timezone    String?
+  device      String?  // mobile | tablet | desktop
+  browser     String?
+  os          String?
+  userAgent   String?
+  referrer    String?
+  consentAll  Boolean  @default(false)
+  consentAnalytics Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  pageViews   PageView[]
+}
+
+model PageView {
+  id          String   @id @default(cuid())
+  sessionId   String
+  userId      String?
+  path        String
+  title       String?
+  referrer    String?
+  durationSec Int?                      // seconds spent on page (sent on next navigation)
+  productId   String?                   // set when viewing a product page
+  searchQuery String?                   // set when a search was performed
+  createdAt   DateTime @default(now())
+
+  session     VisitorSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+}
+
+model CookieConsent {
+  id          String   @id @default(cuid())
+  sessionId   String   @unique
+  userId      String?
+  essential   Boolean  @default(true)
+  analytics   Boolean  @default(false)
+  marketing   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model DataRequest {
+  id           String    @id @default(cuid())
+  userId       String
+  type         String    @default("basic")  // basic | full
+  status       String    @default("pending") // pending | processing | fulfilled | rejected
+  requestNote  String?   // user's reason / note
+  adminNote    String?
+  downloadUrl  String?   // admin-uploaded file or generated link
+  requestedAt  DateTime  @default(now())
+  fulfilledAt  DateTime?
+  expiresAt    DateTime? // download link expiry
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // ─── REFRESH TOKENS ───────────────────────────────────────────────────────────

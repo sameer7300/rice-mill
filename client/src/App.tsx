@@ -9,6 +9,8 @@ import { LangProvider } from './contexts/LangContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { CartProvider } from './contexts/CartContext';
 import { ChatProvider } from './contexts/ChatContext';
+import { CurrencyProvider } from './contexts/CurrencyContext';
+import { TrackingProvider } from './contexts/TrackingContext';
 
 // Admin layout + pages
 import Layout from './components/Layout';
@@ -21,6 +23,7 @@ import Customers from './pages/Customers';
 import Suppliers from './pages/Suppliers';
 import Finance from './pages/Finance';
 import Users from './pages/Users';
+import DashboardDataRequests from './pages/DashboardDataRequests';
 import Analytics from './pages/Analytics';
 import Agents from './pages/Agents';
 import Ecommerce from './pages/Ecommerce';
@@ -50,6 +53,7 @@ import PrivacyPolicyPage from './pages/shop/PrivacyPolicyPage';
 import TermsPage from './pages/shop/TermsPage';
 import RefundPolicyPage from './pages/shop/RefundPolicyPage';
 import ShippingPolicyPage from './pages/shop/ShippingPolicyPage';
+import SitemapPage from './pages/shop/SitemapPage';
 import AboutPage from './pages/shop/AboutPage';
 import ContactPage from './pages/shop/ContactPage';
 import CareersPage from './pages/shop/CareersPage';
@@ -179,6 +183,7 @@ function AppRoutes() {
           <Route path="policies/terms" element={<TermsPage />} />
           <Route path="policies/refund" element={<RefundPolicyPage />} />
           <Route path="policies/shipping" element={<ShippingPolicyPage />} />
+          <Route path="sitemap" element={<SitemapPage />} />
           <Route path="policy" element={<Navigate to="/policies" replace />} />
           <Route path="account" element={<Navigate to="/dashboard" replace />} />
         </Route>
@@ -216,6 +221,7 @@ function AppRoutes() {
           <Route path="wholesale" element={<ProtectedRoute roles={['admin', 'staff']}><DashboardWholesale /></ProtectedRoute>} />
           <Route path="loyalty" element={<ProtectedRoute roles={['admin']}><DashboardLoyalty /></ProtectedRoute>} />
           <Route path="users" element={<ProtectedRoute roles={['admin']}><Users /></ProtectedRoute>} />
+          <Route path="data-requests" element={<ProtectedRoute roles={['admin']}><DashboardDataRequests /></ProtectedRoute>} />
           <Route path="chat" element={<ProtectedRoute roles={['admin', 'staff']}><DashboardChat /></ProtectedRoute>} />
         </Route>
 
@@ -237,10 +243,12 @@ export default function App() {
   return (
     <HelmetProvider>
       <ThemeProvider>
+        <CurrencyProvider>
         <CartProvider>
           <AuthProvider>
             <LangProvider>
               <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                <TrackingProvider>
                 <ChatWrapper>
                   <AppRoutes />
                   <Toaster
@@ -253,10 +261,12 @@ export default function App() {
                     }}
                   />
                 </ChatWrapper>
+                </TrackingProvider>
               </BrowserRouter>
             </LangProvider>
           </AuthProvider>
         </CartProvider>
+        </CurrencyProvider>
       </ThemeProvider>
     </HelmetProvider>
   );

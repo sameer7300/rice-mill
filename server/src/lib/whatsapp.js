@@ -326,6 +326,8 @@ module.exports = {
   sendWholesaleInquiryWA,
   sendNewApplicationWA,
   sendInterviewScheduledWA,
+  // Core sender (exposed for custom one-off messages)
+  send,
   // Utilities
   logWhatsApp,
   shouldSend,

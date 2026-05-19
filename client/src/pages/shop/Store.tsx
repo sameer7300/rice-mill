@@ -3,6 +3,8 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useCart } from '../../contexts/CartContext';
+import { useCurrency } from '../../contexts/CurrencyContext';
+import { useTracking } from '../../contexts/TrackingContext';
 import api from '../../api';
 import toast from 'react-hot-toast';
 import { ShoppingCart, X, GitCompare, SlidersHorizontal, Search, Heart, Package } from 'lucide-react';
@@ -87,6 +89,8 @@ function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }
 export default function Store() {
   const shouldReduce = useReducedMotion();
   const { addItem, items } = useCart();
+  const { format, currency, info: currencyInfo } = useCurrency();
+  const { geo } = useTracking();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -199,7 +203,7 @@ export default function Store() {
     return url;
   };
   const imgSrc = (p: any) => toDisplayUrl(p.imageUrl) || PLACEHOLDER[p.variety] || PLACEHOLDER.default;
-  const formatPKR = (n: number) => `₨${n.toLocaleString()}`;
+  const formatPKR = (n: number) => format(n);
   const toggleCompare = (id: string) => setCompareIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : prev.length >= 4 ? (toast.error('Max 4'), prev) : [...prev, id]);
   const toggleFav = (id: string) => setFavs(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const getDisplayName = (name: string) => { const parts = (name || 'Customer').trim().split(/\s+/); return parts.length === 1 ? parts[0] : `${parts[0]} ${parts[parts.length - 1][0]}.`; };
@@ -368,7 +372,9 @@ export default function Store() {
           </div>
           <Reveal delay={200}>
             <p style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--ink-2)', maxWidth: 420 }}>
-              Every grain is sun-dried in our Batkhela courtyard and aged before milling. Pricing in PKR per kilogram, 2026 harvest.
+              Every grain is sun-dried in our Batkhela courtyard and aged before milling. Prices shown in{' '}
+              <strong style={{ color: 'var(--paddy)' }}>{currency} ({currencyInfo.symbol})</strong>
+              {geo?.detected && geo.city && <span className="text-sm"> · Shipping to {geo.city}</span>}.
             </p>
           </Reveal>
         </div>

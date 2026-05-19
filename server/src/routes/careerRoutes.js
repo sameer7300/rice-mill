@@ -12,6 +12,7 @@ const {
   sendNewApplicationNotificationEmail,
   sendWelcomeEmail,
 } = require('../lib/mailer');
+const wa = require('../lib/whatsapp');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -96,9 +97,14 @@ router.post('/:id/apply', async (req, res) => {
       });
       return app;
     });
-    // Fire-and-forget emails
+    // Fire-and-forget emails + WhatsApp
     sendApplicationReceivedEmail(email, name, career.title).catch(() => {});
     sendNewApplicationNotificationEmail(career.title, name, email, application.id).catch(() => {});
+    // Notify admin via WhatsApp
+    const settings = await prisma.storeSettings.findFirst().catch(() => null);
+    if (settings?.whatsappNumber) {
+      wa.sendNewApplicationWA(name, career.title, settings.whatsappNumber).catch(() => {});
+    }
     res.status(201).json({ success: true, data: application });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Server error', detail: err.message });
@@ -310,6 +316,9 @@ router.patch('/applications/:id/interview', auth, requireRole('admin', 'staff'),
       },
     });
     sendInterviewInvitationEmail(existing.email, existing.name, existing.career.title, interviewDate, interviewMode, interviewNotes).catch(() => {});
+    if (existing.phone) {
+      wa.sendInterviewScheduledWA(existing.name, existing.career.title, interviewDate, existing.phone).catch(() => {});
+    }
     res.json({ success: true, data: app });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Server error' });

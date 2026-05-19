@@ -12,7 +12,7 @@ import {
   LayoutDashboard, Package, Factory, ShoppingCart,
   Users, Truck, DollarSign, UserCog, LogOut,
   Menu, Languages, Wheat, ChevronRight, BarChart3, Moon, Sun, Search, Bot, Globe,
-  BookOpen, Briefcase, Mail, Star, MessageCircle, MessageSquare, Gift, Handshake, ExternalLink
+  BookOpen, Briefcase, Mail, Star, MessageCircle, MessageSquare, Gift, Handshake, ExternalLink, Shield
 } from 'lucide-react';
 import { useChat } from '../contexts/ChatContext';
 
@@ -26,7 +26,7 @@ const BREADCRUMBS: Record<string, string> = {
   '/dashboard/blog': 'Blog', '/dashboard/careers': 'Careers', '/dashboard/newsletter': 'Newsletter',
   '/dashboard/reviews': 'Reviews', '/dashboard/messages': 'Messages',
   '/dashboard/wholesale': 'Wholesale Inquiries', '/dashboard/loyalty': 'Loyalty Program',
-  '/dashboard/chat': 'Live Chat',
+  '/dashboard/chat': 'Live Chat', '/dashboard/data-requests': 'Data Requests',
 };
 
 export default function Layout() {
@@ -79,6 +79,7 @@ export default function Layout() {
     { to: '/dashboard/wholesale', icon: <Handshake size={18} />, label: 'Wholesale', show: isStaff },
     { to: '/dashboard/loyalty', icon: <Gift size={18} />, label: 'Loyalty', show: isAdmin },
     { to: '/dashboard/users', icon: <UserCog size={18} />, label: t('nav.users'), show: isAdmin },
+    { to: '/dashboard/data-requests', icon: <Shield size={18} />, label: 'Data Requests', show: isAdmin },
   ].filter(l => l.show);
 
   const currentPage = BREADCRUMBS[location.pathname] || '';

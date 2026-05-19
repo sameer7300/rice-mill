@@ -151,9 +151,8 @@ router.patch('/:id/status', auth, requireRole('admin', 'staff'), async (req, res
       include: { customer: { include: { user: { select: { name: true, phone: true } } } } }
     });
     // WhatsApp + Email notification (fire-and-forget)
-    if (await wa.shouldSend('notifyStatusUpdate') && order.customer) {
-      const notification = wa.generateOrderStatusUpdate(order, order.customer, status);
-      if (notification.url) wa.logWhatsApp({ orderId: order.id, customerId: order.customerId, type: 'status_update', phone: notification.phone, message: notification.message });
+    if (order.customer) {
+      wa.sendOrderStatusWA(order, order.customer, status).catch(() => {});
     }
     if (order.customer?.user?.email) {
       mailer.sendOrderStatusUpdate(order.customer.user.email, order, status).catch(() => {});
@@ -178,12 +177,12 @@ router.patch('/:id/payment', auth, requireRole('admin', 'staff'), async (req, re
       where: { id: req.params.id },
       data: { paidAmount: paid, paymentStatus }
     });
-    // WhatsApp notification (fire-and-forget)
-    if (await wa.shouldSend('notifyPayment') && order.customer) {
-      const notification = wa.generatePaymentReceived({ ...order, paidAmount: paid }, order.customer, paid);
-      if (notification.url) {
-        wa.logWhatsApp({ orderId: order.id, customerId: order.customerId, type: 'payment', phone: notification.phone, message: notification.message });
-      }
+    // WhatsApp + Email notification (fire-and-forget)
+    if (order.customer) {
+      wa.sendPaymentWA({ ...order, paidAmount: paid }, order.customer, paid).catch(() => {});
+    }
+    if (order.customer?.user?.email) {
+      mailer.sendPaymentConfirmation(order.customer.user.email, { ...order, paidAmount: paid }, paid).catch(() => {});
     }
     res.json(updated);
   } catch (err) {

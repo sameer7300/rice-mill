@@ -7,10 +7,14 @@ const QRCode = require('qrcode');
 const { PrismaClient } = require('@prisma/client');
 const { auth } = require('../middleware/auth');
 const mailer = require('../lib/mailer');
+const wa = require('../lib/whatsapp');
 const logger = require('../lib/logger');
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+// In-memory OTP store for registration verification (key = email|phone, value = {otp, expires})
+const registrationOtpStore = new Map();
 
 const REFRESH_COOKIE = 'refresh_token';
 const REFRESH_TTL_DAYS = 7;
@@ -94,11 +98,58 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// ─── SEND REGISTRATION OTP ───────────────────────────────────────────────────
+
+router.post('/send-registration-otp', async (req, res) => {
+  try {
+    const { name, email, phone, channel } = req.body;
+    if (!channel || !['email', 'whatsapp'].includes(channel)) {
+      return res.status(400).json({ message: 'Channel must be "email" or "whatsapp"' });
+    }
+    if (channel === 'email') {
+      if (!email) return res.status(400).json({ message: 'Email is required' });
+      const existing = await prisma.user.findUnique({ where: { email } });
+      if (existing) return res.status(409).json({ message: 'An account with this email already exists' });
+    } else {
+      if (!phone) return res.status(400).json({ message: 'Phone number is required for WhatsApp verification' });
+    }
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const key = channel === 'email' ? email : phone;
+    registrationOtpStore.set(key, { otp, expires: new Date(Date.now() + 10 * 60 * 1000), channel });
+
+    if (channel === 'email') {
+      mailer.sendRegistrationOTPEmail(email, name || 'there', otp).catch(() => {});
+    } else {
+      wa.send({
+        phone,
+        message: `🌾 *Al-Noor Rice Mills — Verify Your Account*\n\nAs-Salamu Alaykum ${name || 'there'}!\n\nYour registration OTP is:\n\n*${otp}*\n\nValid for 10 minutes. Do not share this code with anyone.`,
+        type: 'registration_otp',
+      }).catch(() => {});
+    }
+
+    res.json({ message: 'OTP sent successfully', channel });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, phone, password } = req.body;
+    const { name, email, phone, password, otp, otpChannel } = req.body;
     if (!name || !email || !password) return res.status(400).json({ message: 'Name, email and password are required' });
     if (password.length < 6) return res.status(400).json({ message: 'Password must be at least 6 characters' });
+
+    // Verify OTP if provided (from registration verification flow)
+    if (otp && otpChannel) {
+      const key = otpChannel === 'email' ? email : phone;
+      if (!key) return res.status(400).json({ message: 'OTP verification target is missing' });
+      const stored = registrationOtpStore.get(key);
+      if (!stored || stored.otp !== String(otp) || new Date() > stored.expires) {
+        return res.status(400).json({ message: 'Invalid or expired OTP. Please request a new one.' });
+      }
+      registrationOtpStore.delete(key);
+    }
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return res.status(409).json({ message: 'An account with this email already exists' });
@@ -134,8 +185,15 @@ router.post('/register', async (req, res) => {
       if (referrer) await prisma.user.update({ where: { id: user.id }, data: { referredBy: referrer.id } });
     }
 
-    // Welcome email (fire-and-forget)
+    // Welcome email + WhatsApp (fire-and-forget)
     if (email) mailer.sendRegistrationWelcome(email, name).catch(() => {});
+    if (phone) {
+      wa.send({
+        phone,
+        message: `🌾 *Al-Noor Rice Mills — Welcome!*\n\nAs-Salamu Alaykum ${name}!\n\nYour account has been created successfully.\n\nShop: https://alnoorice.pk\n📞 +92-946-123456`,
+        type: 'welcome',
+      }).catch(() => {});
+    }
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, name: user.name },
@@ -273,6 +331,64 @@ router.post('/forgot-password', async (req, res) => {
 
     mailer.sendPasswordResetEmail(user.email, user.name, resetToken).catch(() => {});
     res.json({ message: 'If that email exists, a reset link has been sent.' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ─── FORGOT PASSWORD VIA WHATSAPP OTP ────────────────────────────────────────
+
+router.post('/forgot-password-whatsapp', async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ message: 'Phone number is required' });
+    const cleanedPhone = phone.replace(/\D/g, '').replace(/^0/, '92');
+    const user = await prisma.user.findFirst({ where: { phone: { contains: cleanedPhone.slice(-10) } } });
+    // Always return success — don't reveal if phone exists
+    if (!user) return res.json({ message: 'If a registered account exists for this number, an OTP has been sent.' });
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordResetToken: `WA_OTP_${otp}`, passwordResetExpires: expires }
+    });
+
+    const message = `🔐 *Al-Noor Rice Mills — Password Reset OTP*\n\nYour one-time code is:\n\n*${otp}*\n\nThis code expires in 10 minutes. Do not share it with anyone.\n\nIf you didn't request this, ignore this message.`;
+    wa.send({ phone, message, type: 'otp_reset' }).catch(() => {});
+
+    res.json({ message: 'If a registered account exists for this number, an OTP has been sent.' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ─── RESET PASSWORD VIA WHATSAPP OTP ─────────────────────────────────────────
+
+router.post('/reset-password-whatsapp', async (req, res) => {
+  try {
+    const { phone, otp, password } = req.body;
+    if (!phone || !otp || !password) return res.status(400).json({ message: 'Phone, OTP and new password are required' });
+    if (password.length < 6) return res.status(400).json({ message: 'Password must be at least 6 characters' });
+
+    const cleanedPhone = phone.replace(/\D/g, '').replace(/^0/, '92');
+    const user = await prisma.user.findFirst({
+      where: {
+        phone: { contains: cleanedPhone.slice(-10) },
+        passwordResetToken: `WA_OTP_${otp}`,
+        passwordResetExpires: { gt: new Date() }
+      }
+    });
+    if (!user) return res.status(400).json({ message: 'Invalid or expired OTP. Please request a new one.' });
+
+    const hashed = await bcrypt.hash(password, 10);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashed, passwordResetToken: null, passwordResetExpires: null }
+    });
+
+    mailer.sendPasswordChangedEmail(user.email, user.name).catch(() => {});
+    res.json({ message: 'Password reset successfully. You can now sign in.' });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }

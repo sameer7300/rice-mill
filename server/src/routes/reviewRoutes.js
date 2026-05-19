@@ -2,6 +2,7 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { auth, requireRole } = require('../middleware/auth');
 const mailer = require('../lib/mailer');
+const wa = require('../lib/whatsapp');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -194,10 +195,13 @@ router.patch('/admin/:id/approve', auth, requireRole('admin', 'staff'), async (r
     const review = await prisma.review.update({
       where: { id: req.params.id },
       data: { status: 'approved', adminNote: null },
-      include: { user: { select: { name: true, email: true } }, product: { select: { name: true } } }
+      include: { user: { select: { name: true, email: true, phone: true } }, product: { select: { name: true, id: true } } }
     });
     if (review.user?.email) {
       mailer.sendReviewApproved(review.user.email, review.product?.name, review.rating).catch(() => {});
+    }
+    if (review.user?.phone) {
+      wa.sendReviewApprovedWA(review, { phone: review.user.phone, user: review.user }, review.product).catch(() => {});
     }
     res.json(review);
   } catch (err) {

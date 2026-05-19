@@ -2,16 +2,15 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import api from '../../api';
 import { useCart } from '../../contexts/CartContext';
+import { useCurrency } from '../../contexts/CurrencyContext';
 import toast from 'react-hot-toast';
 import { Wheat, ShoppingCart, Star, Check, X, ArrowLeft } from 'lucide-react';
 import PageTransition from '../../components/PageTransition';
 
-const formatPKR = (n: number) => `PKR ${n.toLocaleString()}`;
-
-const ATTRS = [
+const makeAttrs = (fmt: (n: number) => string) => [
   { key: 'variety',     label: 'Variety' },
   { key: 'grade',       label: 'Grade' },
-  { key: 'pricePerKg',  label: 'Price/kg',    format: (v: any) => formatPKR(Number(v)) },
+  { key: 'pricePerKg',  label: 'Price/kg',    format: (v: any) => fmt(Number(v)) },
   { key: 'minOrderKg',  label: 'Min Order',   format: (v: any) => `${v} kg` },
   { key: 'ageMonths',   label: 'Age',         format: (v: any) => v ? `${v} months` : '—' },
   { key: 'isOrganic',   label: 'Organic',     format: (v: any) => v ? <Check size={16} className="text-green-600" /> : <X size={16} className="text-red-400" /> },
@@ -24,6 +23,8 @@ export default function ComparePage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading]   = useState(true);
   const { addItem } = useCart();
+  const { format } = useCurrency();
+  const ATTRS = makeAttrs(format);
 
   useEffect(() => {
     const ids = (params.get('ids') || '').split(',').filter(Boolean).slice(0, 4);

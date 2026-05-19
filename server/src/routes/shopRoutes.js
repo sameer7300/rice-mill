@@ -3,6 +3,7 @@ const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mailer = require('../lib/mailer');
+const wa = require('../lib/whatsapp');
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 
 const router = express.Router();
@@ -144,15 +145,21 @@ router.post('/discount/validate', async (req, res) => {
   }
 });
 
-// POST create-payment-intent (Stripe)
+// POST create-payment-intent (Stripe) — supports multi-currency
 router.post('/create-payment-intent', async (req, res) => {
   try {
     if (!stripe) return res.status(503).json({ message: 'Stripe not configured' });
-    const { amount } = req.body;
+    const { amount, currency: reqCurrency } = req.body;
     if (!amount || amount <= 0) return res.status(400).json({ message: 'Invalid amount' });
+
+    // Stripe requires amount in smallest unit (paisa for PKR, cents for USD, etc.)
+    // Zero-decimal currencies (JPY, KWD etc.) use 1x multiplier; all others 100x
+    const zeroDec = ['BHD', 'KWD', 'OMR', 'JOD'];
+    const cur = (reqCurrency || 'PKR').toLowerCase();
+    const multiplier = zeroDec.includes((reqCurrency || '').toUpperCase()) ? 1000 : 100;
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // PKR in paisa (100 paisa = 1 PKR)
-      currency: 'pkr',
+      amount: Math.round(amount * multiplier),
+      currency: cur,
       automatic_payment_methods: { enabled: true },
       metadata: { store: 'Al-Noor Rice Mills' }
     });
@@ -170,10 +177,24 @@ router.get('/stripe-config', (req, res) => {
 // POST checkout — guest + auto-account + optional full account creation
 router.post('/checkout', async (req, res) => {
   try {
-    const { name, email, phone, address, city, paymentMethod, items, discountCode, notes, createAccount, password, stripePaymentIntentId } = req.body;
+    const {
+      name, email, phone, address, city, countryCode, paymentMethod,
+      items, discountCode, notes, createAccount, password,
+      stripePaymentIntentId, currency: orderCurrency, exchangeRate,
+      shippingZoneId, shippingFee: clientShippingFee,
+    } = req.body;
 
     if (!name || !phone || !address || !items?.length)
       return res.status(400).json({ message: 'Name, phone, address and items are required' });
+
+    // International payment method validation
+    const isDomestic = !countryCode || countryCode.toUpperCase() === 'PK';
+    const domesticMethods = ['cod', 'stripe', 'bank', 'easypaisa', 'jazzcash'];
+    const intlMethods = ['stripe', 'bank_wire'];
+    const allowedMethods = isDomestic ? domesticMethods : intlMethods;
+    if (paymentMethod && !allowedMethods.includes(paymentMethod)) {
+      return res.status(400).json({ message: `Payment method "${paymentMethod}" is not available for your region.` });
+    }
 
     // Get store settings for shipping
     const settings = await prisma.storeSettings.findFirst() || {};
@@ -199,7 +220,16 @@ router.post('/checkout', async (req, res) => {
     // Calculate totals
     const subtotal = validatedItems.reduce((s, i) => s + (i.quantityKg * i.product.pricePerKg), 0);
     const totalKg = validatedItems.reduce((s, i) => s + i.quantityKg, 0);
-    const shipping = subtotal >= (settings.freeShippingAbove || 10000) ? 0 : (settings.shippingFee || 500);
+
+    // Shipping: domestic uses store flat rate; international uses zone fee from client (validated)
+    let shipping;
+    let resolvedZoneId = shippingZoneId || null;
+    if (!isDomestic && clientShippingFee !== undefined) {
+      // Client calculated zone fee — trust it (it came from our own /api/shipping/calculate)
+      shipping = parseFloat(clientShippingFee) || 0;
+    } else {
+      shipping = subtotal >= (settings.freeShippingAbove || 10000) ? 0 : (settings.shippingFee || 500);
+    }
 
     // Validate + apply discount
     let discountAmount = 0;
@@ -290,15 +320,21 @@ router.post('/checkout', async (req, res) => {
           totalAmount,
           paidAmount,
           paymentStatus,
-          deliveryAddress: `${address}, ${city || ''}`,
+          deliveryAddress: `${address}, ${city || ''}${countryCode && countryCode !== 'PK' ? `, ${countryCode}` : ''}`,
           notes: [
             notes,
             isStripePaid ? `Stripe: ${stripePaymentIntentId}` : null,
-            `Method: ${paymentMethod || 'cod'}`
+            `Method: ${paymentMethod || 'cod'}`,
+            !isDomestic ? `Country: ${countryCode}` : null,
           ].filter(Boolean).join(' · '),
           source: 'online',
           discountCode: appliedCode?.code || null,
           discountAmount,
+          currency: orderCurrency || 'PKR',
+          exchangeRate: exchangeRate ? parseFloat(exchangeRate) : 1,
+          countryCode: countryCode || null,
+          shippingZoneId: resolvedZoneId,
+          shippingFee: shipping,
           items: {
             create: validatedItems.map(i => ({
               riceStockId: i.product.riceStockId || null,
@@ -320,8 +356,16 @@ router.post('/checkout', async (req, res) => {
       await prisma.discount.update({ where: { id: appliedCode.id }, data: { usedCount: { increment: 1 } } });
     }
 
-    // Build WhatsApp message
-    const wa = settings.whatsappNumber ? buildWhatsAppMessage(order, validatedItems, settings, shipping, discountAmount) : null;
+    // Build WhatsApp URL for inline display
+    const waUrl = settings.whatsappNumber ? buildWhatsAppMessage(order, validatedItems, settings, shipping, discountAmount) : null;
+
+    // Send order confirmation — email + WhatsApp (fire-and-forget)
+    const customerEmail = email || customer?.user?.email;
+    const customerPhone = phone || customer?.phone || customer?.user?.phone;
+    if (customerEmail) {
+      mailer.sendOrderConfirmation(customerEmail, order, validatedItems).catch(() => {});
+    }
+    wa.sendOrderConfirmationWA(order, { ...customer, user: customer.user || { name, phone: customerPhone } }, validatedItems).catch(() => {});
 
     // If account was freshly created, return JWT for auto-login
     let authToken = null, authUser = null;
@@ -335,7 +379,7 @@ router.post('/checkout', async (req, res) => {
       authUser = userSafe;
     }
 
-    res.status(201).json({ order, whatsappUrl: wa, shipping, discountAmount, token: authToken, user: authUser });
+    res.status(201).json({ order, whatsappUrl: waUrl, shipping, discountAmount, token: authToken, user: authUser });
   } catch (err) {
     console.error('Checkout error:', err);
     res.status(500).json({ message: 'Checkout failed', error: err.message });

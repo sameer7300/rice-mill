@@ -10,6 +10,7 @@ import StatCard from '../components/ui/StatCard';
 import { StatsSkeleton } from '../components/ui/Skeleton';
 import { OrderStatusBadge, PaymentBadge } from '../components/ui/Badge';
 import { formatPKR, formatDate } from '../utils/export';
+import { useCurrency } from '../contexts/CurrencyContext';
 import Modal from '../components/ui/Modal';
 import { inputCls } from '../components/ui/PageHeader';
 import {
@@ -303,6 +304,7 @@ const CUST_TABS = [
   { id: 'rewards',   label: 'Rewards',    icon: <Gift size={15} /> },
   { id: 'profile',   label: 'Profile',    icon: <User size={15} /> },
   { id: 'security',  label: 'Security',   icon: <Shield size={15} /> },
+  { id: 'mydata',    label: 'My Data',    icon: <Download size={15} /> },
 ] as const;
 type CTab = typeof CUST_TABS[number]['id'];
 const ORDER_FILTERS = ['All', 'Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered'];
@@ -325,6 +327,7 @@ function StarDisplay({ rating }: { rating: number }) {
 function CustomerDashboard({ user }: { user: any }) {
   const { addItem } = useCart();
   const { toggleLang, lang } = useLang();
+  const { format: formatC } = useCurrency(); // customer-facing prices in selected currency
   const navigate = useNavigate();
   const [tab, setTab] = useState<CTab>('orders');
   const [orders, setOrders]       = useState<any[]>([]);
@@ -526,7 +529,7 @@ function CustomerDashboard({ user }: { user: any }) {
                   <div className="flex items-center gap-3 text-xs text-gray-400">
                     <span>{formatDate(o.createdAt)}</span>
                     <span>·</span>
-                    <span className="font-semibold text-green-700">{formatPKR(o.totalAmount)}</span>
+                    <span className="font-semibold text-green-700">{formatC(o.totalAmount)}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -556,7 +559,7 @@ function CustomerDashboard({ user }: { user: any }) {
                     {(o.items || []).map((item: any) => (
                       <div key={item.id} className="flex justify-between text-sm">
                         <span className="text-gray-700">{item.variety} · Grade {item.grade} · {item.quantityKg}kg</span>
-                        <span className="font-medium text-gray-900">{formatPKR(item.totalPrice)}</span>
+                        <span className="font-medium text-gray-900">{formatC(item.totalPrice)}</span>
                       </div>
                     ))}
                   </div>
@@ -592,7 +595,7 @@ function CustomerDashboard({ user }: { user: any }) {
                     </Link>
                     <div className="p-3">
                       <Link to={`/products/${p.id}`} className="font-semibold text-sm text-gray-900 hover:text-green-700 block truncate">{p.name}</Link>
-                      <p className="text-green-700 font-bold text-sm">{formatPKR(p.pricePerKg)}/kg</p>
+                      <p className="text-green-700 font-bold text-sm">{formatC(p.pricePerKg)}/kg</p>
                       <div className="flex gap-2 mt-2">
                         <button onClick={() => addFavToCart(fav)} className="flex-1 text-xs bg-green-600 hover:bg-green-700 text-white py-1.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-1">
                           <ShoppingCart size={12} /> Add
@@ -875,6 +878,11 @@ function CustomerDashboard({ user }: { user: any }) {
           </div>
         </div>
       )}
+
+      {/* ── MY DATA TAB ─────────────────────────────────────────────────── */}
+      {tab === 'mydata' && (
+        <MyDataTab userId={user?.id || ''} />
+      )}
     </div>
     {chatOrder && (
       <ChatModal
@@ -887,5 +895,123 @@ function CustomerDashboard({ user }: { user: any }) {
       />
     )}
     </PageTransition>
+  );
+}
+
+// ─── MY DATA TAB ─────────────────────────────────────────────────────────────
+
+function MyDataTab({ userId }: { userId: string }) {
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [note, setNote] = useState('');
+
+  useEffect(() => {
+    api.get('/data-requests/mine').then(r => setRequests(r.data.data || [])).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  const downloadBasic = async () => {
+    setDownloading(true);
+    try {
+      const response = await api.get('/data-requests/download/basic', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `my-data-${Date.now()}.json`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('Your data has been downloaded.');
+    } catch { toast.error('Download failed. Please try again.'); }
+    finally { setDownloading(false); }
+  };
+
+  const submitFullRequest = async () => {
+    setSubmitting(true);
+    try {
+      const { data } = await api.post('/data-requests', { type: 'full', requestNote: note });
+      setRequests(prev => [data.data, ...prev]);
+      setNote('');
+      toast.success('Full data request submitted. Admin will process it within 30 days.');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Request failed.');
+    } finally { setSubmitting(false); }
+  };
+
+  const statusColor: Record<string, string> = {
+    pending: 'bg-amber-100 text-amber-700',
+    processing: 'bg-blue-100 text-blue-700',
+    fulfilled: 'bg-green-100 text-green-700',
+    rejected: 'bg-red-100 text-red-700',
+  };
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5">
+        <h3 className="font-bold text-blue-900 flex items-center gap-2 mb-2"><Shield size={16} /> Your Privacy Rights</h3>
+        <p className="text-sm text-blue-800 leading-relaxed">
+          Under GDPR and applicable privacy laws, you have the right to access your personal data, request corrections, or ask for deletion. Al-Noor Rice Mills collects your data to provide our service and improve your experience.
+        </p>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+        <div>
+          <h3 className="font-bold text-gray-900 flex items-center gap-2"><Download size={16} className="text-green-600" /> Download Your Basic Data</h3>
+          <p className="text-sm text-gray-500 mt-1">Instantly download a JSON file of your profile, orders, addresses, reviews, and loyalty history.</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          {['Profile & account', 'All your orders', 'Saved addresses', 'Payment methods (masked)', 'Reviews written', 'Loyalty points history'].map(i => (
+            <div key={i} className="flex items-center gap-1.5 text-gray-600"><CheckCircle2 size={11} className="text-green-500 flex-shrink-0" />{i}</div>
+          ))}
+        </div>
+        <button onClick={downloadBasic} disabled={downloading}
+          className="flex items-center gap-2 px-5 py-2.5 bg-green-700 hover:bg-green-800 disabled:opacity-60 text-white rounded-xl font-semibold text-sm transition-colors">
+          {downloading ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Preparing...</> : <><Download size={15} /> Download My Data (JSON)</>}
+        </button>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+        <div>
+          <h3 className="font-bold text-gray-900 flex items-center gap-2"><Eye size={16} className="text-blue-600" /> Request Full Data Export</h3>
+          <p className="text-sm text-gray-500 mt-1">Request a complete export including visit history, IP logs, and activity data. An admin will review and respond within 30 days.</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          {['Everything in Basic', 'Visit & page history', 'IP address logs', 'Device & browser info', 'Product views', 'Search history'].map(i => (
+            <div key={i} className="flex items-center gap-1.5 text-gray-600"><CheckCircle2 size={11} className="text-blue-500 flex-shrink-0" />{i}</div>
+          ))}
+        </div>
+        <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} placeholder="Optional: reason for your request (e.g. GDPR access request)"
+          className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+        <button onClick={submitFullRequest} disabled={submitting}
+          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-xl font-semibold text-sm transition-colors">
+          {submitting ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Submitting...</> : 'Submit Full Data Request'}
+        </button>
+      </div>
+
+      {!loading && requests.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-50">
+            <h3 className="font-semibold text-gray-900 text-sm">Past Requests</h3>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {requests.map(r => (
+              <div key={r.id} className="flex items-center gap-3 px-5 py-3.5">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-800 capitalize">{r.type} data export</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{new Date(r.requestedAt).toLocaleDateString('en-PK', { dateStyle: 'medium' })}</p>
+                  {r.adminNote && <p className="text-xs text-gray-500 mt-0.5 italic">"{r.adminNote}"</p>}
+                </div>
+                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusColor[r.status] || 'bg-gray-100 text-gray-600'}`}>{r.status}</span>
+                {r.downloadUrl && r.status === 'fulfilled' && (
+                  <a href={r.downloadUrl} download className="flex items-center gap-1 text-xs text-green-700 hover:text-green-900 font-medium">
+                    <Download size={12} /> Download
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

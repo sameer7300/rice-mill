@@ -3,6 +3,9 @@ import ChatWidget from '../../components/ChatWidget';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCurrency, CURRENCIES, type CurrencyCode } from '../../contexts/CurrencyContext';
+import { useTracking } from '../../contexts/TrackingContext';
+import CookieBanner from '../../components/CookieBanner';
 import api from '../../api';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,14 +18,17 @@ import {
   ShoppingCart, Menu, X, Wheat, Phone, Mail, MapPin, Package, ChevronRight,
   User, LogIn, UserPlus, Search, Heart, LayoutDashboard, LogOut, Gift,
   ChevronDown, Truck, Shield, Star, Facebook, Instagram, Youtube,
-  ArrowRight, Minus, Plus, Trash2
+  ArrowRight, Minus, Plus, Trash2, Globe
 } from 'lucide-react';
 
-const formatPKR = (n: number) => `PKR ${n.toLocaleString()}`;
+// formatPKR is replaced by useCurrency().format() inside the component
 
 export default function ShopLayout() {
   const { totalItems, items, subtotal, removeItem, updateQty } = useCart();
   const { user, isCustomer, logout } = useAuth();
+  const { currency, setCurrency, info: currencyInfo, format } = useCurrency();
+  const { geo, applyConsent, consent } = useTracking();
+  const formatPKR = (n: number) => format(n);
   const navigate = useNavigate();
   const location = useLocation();
   const [cartOpen, setCartOpen]       = useState(false);
@@ -36,14 +42,19 @@ export default function ShopLayout() {
   const [searchRes, setSearchRes]     = useState<any[]>([]);
   const [discountCode, setDC]         = useState('');
   const [favCount, setFavCount]       = useState(0);
+  const [currMenu, setCurrMenu]       = useState(false);
   const shopRef   = useRef<HTMLDivElement>(null);
   const userRef   = useRef<HTMLDivElement>(null);
+  const currRef   = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     api.get('/shop/settings').then(r => setSettings(r.data)).catch(() => {});
     if (isCustomer) api.get('/favorites/count').then(r => setFavCount(r.data?.data?.count || 0)).catch(() => {});
   }, [isCustomer]);
+
+  // CurrencyContext handles geo-to-currency auto-detection via the 'alnoor:geo' custom event.
+  // Nothing needed here.
 
   // Scroll detection for sticky shrink
   useEffect(() => {
@@ -57,6 +68,7 @@ export default function ShopLayout() {
     const fn = (e: MouseEvent) => {
       if (shopRef.current && !shopRef.current.contains(e.target as Node)) setShopMenu(false);
       if (userRef.current && !userRef.current.contains(e.target as Node)) setUserMenu(false);
+      if (currRef.current && !currRef.current.contains(e.target as Node)) setCurrMenu(false);
     };
     document.addEventListener('mousedown', fn);
     return () => document.removeEventListener('mousedown', fn);
@@ -109,6 +121,32 @@ export default function ShopLayout() {
           </div>
           <div className="flex items-center gap-4">
             <Link to="/track" className="hover:text-white transition-colors">Track Order</Link>
+            {/* Currency selector */}
+            <div className="relative" ref={currRef}>
+              <button onClick={() => setCurrMenu(v => !v)}
+                className="flex items-center gap-1 hover:text-white transition-colors text-green-300 font-medium">
+                <Globe size={11} />
+                <span>{currencyInfo.flag} {currency}</span>
+                <ChevronDown size={10} className={`transition-transform ${currMenu ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence>
+                {currMenu && (
+                  <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+                    className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 min-w-[200px]">
+                    <p className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wide border-b border-gray-100 mb-1">Select Currency</p>
+                    {CURRENCIES.map(c => (
+                      <button key={c.code} onClick={() => { setCurrency(c.code as CurrencyCode, true); setCurrMenu(false); }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-green-50 transition-colors ${currency === c.code ? 'text-green-700 font-semibold bg-green-50' : 'text-gray-700'}`}>
+                        <span className="text-base">{c.flag}</span>
+                        <span className="flex-1">{c.name}</span>
+                        <span className="text-xs text-gray-400 font-mono">{c.code}</span>
+                        {currency === c.code && <span className="w-1.5 h-1.5 rounded-full bg-green-600" />}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
             {!user && <Link to="/login" className="hover:text-white transition-colors">Seller Login</Link>}
           </div>
         </div>
@@ -496,12 +534,12 @@ export default function ShopLayout() {
               © {new Date().getFullYear()} Al-Noor Rice Mills. All rights reserved. · Made with ❤️ in Batkhela, Pakistan
             </p>
             <div className="flex items-center gap-3 flex-wrap justify-center">
-              {['COD', 'Bank Transfer', 'EasyPaisa', 'JazzCash'].map(p => (
+              {['COD', 'Bank Transfer', 'EasyPaisa', 'JazzCash', 'Visa / Mastercard', 'Bank Wire', 'PayPal'].map(p => (
                 <span key={p} className="text-xs text-gray-400 bg-green-900 px-2.5 py-1 rounded-full">{p}</span>
               ))}
             </div>
             <div className="flex items-center gap-4 flex-wrap justify-center">
-              {[['Privacy', '/policies/privacy'], ['Terms', '/policies/terms'], ['Refund', '/policies/refund'], ['Shipping', '/policies/shipping'], ['Sitemap', '/sitemap.xml']].map(([l, h]) => (
+              {[['Privacy', '/policies/privacy'], ['Terms', '/policies/terms'], ['Refund', '/policies/refund'], ['Shipping', '/policies/shipping'], ['Sitemap', '/sitemap']].map(([l, h]) => (
                 <Link key={l} to={h} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">{l}</Link>
               ))}
             </div>
@@ -622,6 +660,11 @@ export default function ShopLayout() {
 
       {/* Floating chat widget */}
       <ChatWidget />
+
+      {/* Cookie consent banner */}
+      {!consent?.decided && (
+        <CookieBanner onConsent={(c) => applyConsent(!!(c.analytics && c.marketing))} />
+      )}
     </div>
   );
 }
