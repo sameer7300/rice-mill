@@ -1,8 +1,12 @@
 import axios from 'axios';
 
-// Use relative /api so Vite's proxy forwards to Express on port 5000.
-// This also works in production when frontend and backend share the same origin.
-const api = axios.create({ baseURL: '/api', withCredentials: true });
+// In production VITE_API_URL points to the deployed backend (e.g. https://alnoor-api.vercel.app).
+// In local dev it is unset so we fall back to relative /api which Vite proxies to :5000.
+const BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api';
+
+const api = axios.create({ baseURL: BASE, withCredentials: true });
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
@@ -40,7 +44,7 @@ api.interceptors.response.use(
       original._retry = true;
       _isRefreshing = true;
       try {
-        const res = await axios.post('/api/auth/refresh', {}, { withCredentials: true });
+        const res = await axios.post(`${BASE}/auth/refresh`, {}, { withCredentials: true });
         const newToken = res.data.token;
         localStorage.setItem('token', newToken);
         api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
