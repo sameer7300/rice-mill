@@ -99,9 +99,21 @@ app.use('/', sitemapRoutes);
 
 app.get('/api/health', (_, res) => res.json({ success: true, version: '3.1', app: 'Al-Noor Rice Mills' }));
 
-// Create HTTP server and attach Socket.IO
+// Create HTTP server
 const server = http.createServer(app);
-setupSocket(server);
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`🌾 Al-Noor Rice Mills Server v3.1 running on http://localhost:${PORT}`));
+// Socket.IO — only set up persistent connections outside Vercel serverless
+if (process.env.VERCEL !== '1') {
+  setupSocket(server);
+}
+
+// Start listening — local dev and traditional servers only
+if (process.env.VERCEL !== '1') {
+  const PORT = process.env.PORT || 5000;
+  server.listen(PORT, () =>
+    console.log(`🌾 Al-Noor Rice Mills Server v3.1 → http://localhost:${PORT}`)
+  );
+}
+
+// Export for Vercel serverless and testing
+module.exports = app;
