@@ -669,6 +669,17 @@ model ChatMessage {
   sender         User?             @relation(fields: [senderId], references: [id])
 }
 
+// ─── OTP VERIFICATION (registration) ─────────────────────────────────────────
+
+model OtpVerification {
+  id        String   @id @default(cuid())
+  target    String   // email or phone number
+  otp       String
+  channel   String   // 'email' | 'whatsapp'
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
 // ─── VISITOR TRACKING & PRIVACY ──────────────────────────────────────────────
 
 model VisitorSession {

@@ -13,8 +13,7 @@ const logger = require('../lib/logger');
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// In-memory OTP store for registration verification (key = email|phone, value = {otp, expires})
-const registrationOtpStore = new Map();
+// OTP stored in DB (OtpVerification table) — in-memory Map breaks on serverless (Vercel)
 
 const REFRESH_COOKIE = 'refresh_token';
 const REFRESH_TTL_DAYS = 7;
@@ -115,13 +114,18 @@ router.post('/send-registration-otp', async (req, res) => {
     }
 
     const otp = String(Math.floor(100000 + Math.random() * 900000));
-    const key = channel === 'email' ? email : phone;
-    registrationOtpStore.set(key, { otp, expires: new Date(Date.now() + 10 * 60 * 1000), channel });
+    const target = channel === 'email' ? email : phone;
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
+    // Upsert OTP in DB (works across serverless invocations, unlike in-memory Map)
+    await prisma.otpVerification.deleteMany({ where: { target } }); // clear old OTPs
+    await prisma.otpVerification.create({ data: { target, otp, channel, expiresAt } });
+
+    // Await the send so it completes before the serverless function returns
     if (channel === 'email') {
-      mailer.sendRegistrationOTPEmail(email, name || 'there', otp).catch(() => {});
+      await mailer.sendRegistrationOTPEmail(email, name || 'there', otp).catch(() => {});
     } else {
-      wa.send({
+      await wa.send({
         phone,
         message: `🌾 *Al-Noor Rice Mills — Verify Your Account*\n\nAs-Salamu Alaykum ${name || 'there'}!\n\nYour registration OTP is:\n\n*${otp}*\n\nValid for 10 minutes. Do not share this code with anyone.`,
         type: 'registration_otp',
@@ -130,6 +134,7 @@ router.post('/send-registration-otp', async (req, res) => {
 
     res.json({ message: 'OTP sent successfully', channel });
   } catch (err) {
+    logger.error('send-registration-otp error', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -140,15 +145,17 @@ router.post('/register', async (req, res) => {
     if (!name || !email || !password) return res.status(400).json({ message: 'Name, email and password are required' });
     if (password.length < 6) return res.status(400).json({ message: 'Password must be at least 6 characters' });
 
-    // Verify OTP if provided (from registration verification flow)
+    // Verify OTP if provided — look up from DB (serverless-safe)
     if (otp && otpChannel) {
-      const key = otpChannel === 'email' ? email : phone;
-      if (!key) return res.status(400).json({ message: 'OTP verification target is missing' });
-      const stored = registrationOtpStore.get(key);
-      if (!stored || stored.otp !== String(otp) || new Date() > stored.expires) {
+      const target = otpChannel === 'email' ? email : phone;
+      if (!target) return res.status(400).json({ message: 'OTP verification target is missing' });
+      const stored = await prisma.otpVerification.findFirst({
+        where: { target, otp: String(otp), expiresAt: { gt: new Date() } }
+      });
+      if (!stored) {
         return res.status(400).json({ message: 'Invalid or expired OTP. Please request a new one.' });
       }
-      registrationOtpStore.delete(key);
+      await prisma.otpVerification.delete({ where: { id: stored.id } }); // one-time use
     }
 
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -188,6 +195,7 @@ router.post('/register', async (req, res) => {
     // Welcome email + WhatsApp (fire-and-forget)
     if (email) mailer.sendRegistrationWelcome(email, name).catch(() => {});
     if (phone) {
+      // fire-and-forget is fine here — welcome message, not OTP
       wa.send({
         phone,
         message: `🌾 *Al-Noor Rice Mills — Welcome!*\n\nAs-Salamu Alaykum ${name}!\n\nYour account has been created successfully.\n\nShop: https://alnoorice.pk\n📞 +92-946-123456`,
@@ -355,7 +363,7 @@ router.post('/forgot-password-whatsapp', async (req, res) => {
     });
 
     const message = `🔐 *Al-Noor Rice Mills — Password Reset OTP*\n\nYour one-time code is:\n\n*${otp}*\n\nThis code expires in 10 minutes. Do not share it with anyone.\n\nIf you didn't request this, ignore this message.`;
-    wa.send({ phone, message, type: 'otp_reset' }).catch(() => {});
+    await wa.send({ phone, message, type: 'otp_reset' }).catch(() => {});
 
     res.json({ message: 'If a registered account exists for this number, an OTP has been sent.' });
   } catch (err) {
