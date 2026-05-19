@@ -127,6 +127,16 @@ export default function Store() {
   };
   const clearAll = () => setSearchParams(new URLSearchParams());
 
+  // ── Shuffle helper (Fisher-Yates) ─────────────────────────────────────────
+  const shuffle = <T,>(arr: T[]): T[] => {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+
   // ── Fetch products ──────────────────────────────────────────────────────────
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -144,11 +154,13 @@ export default function Store() {
       const res = await api.get(`/shop/products?${p}`);
       const data = res.data;
       const prods = Array.isArray(data) ? data : (data.products || []);
-      setProducts(prods);
-      setTotal(Array.isArray(data) ? data.length : (data.total || 0));
+      // Shuffle unless user has applied an explicit sort — respect their sort choice
+      const ordered = sortBy ? prods : shuffle(prods);
+      setProducts(ordered);
+      setTotal(ordered.length);
       setProdPage(0); // reset to first page on filter change
       const qty: Record<string, number> = {};
-      prods.forEach((pr: any) => { qty[pr.id] = pr.minOrderKg || 10; });
+      ordered.forEach((pr: any) => { qty[pr.id] = pr.minOrderKg || 10; });
       setQuantities(q => ({ ...q, ...qty }));
     } finally { setLoading(false); }
   }, [search, grade, variety, minPrice, maxPrice, inStockOnly, minOrder, sortBy]);
