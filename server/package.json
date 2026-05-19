@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "build": "prisma generate",
-    "postinstall": "prisma generate",
+    "build": "node -e \"const s=process.env.VERCEL?'./prisma/schema.production.prisma':'./prisma/schema.prisma';require('child_process').execSync('npx prisma generate --schema='+s,{stdio:'inherit'})\"",
+    "postinstall": "npm run build",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "node prisma/seed.js",
