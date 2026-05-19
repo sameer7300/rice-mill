@@ -1,7 +1,7 @@
 /**
  * WhatsApp notification system
  * - WHATSAPP_ENABLED=false → mock mode (logs only, no actual sends)
- * - WHATSAPP_ENABLED=true + TWILIO_* vars → sends via Twilio
+ * - WHATSAPP_ENABLED=true + ULTRAMSG_* vars → sends via UltraMsg API
  * - All send functions are fire-and-forget (never throw)
  */
 
@@ -52,21 +52,42 @@ async function logWhatsApp({ orderId, customerId, type, phone, message, status =
   }
 }
 
-// ─── Twilio Provider ──────────────────────────────────────────────────────────
+// ─── UltraMsg Provider ───────────────────────────────────────────────────────
 
-async function sendViaTwilio(to, message) {
-  const sid = process.env.TWILIO_ACCOUNT_SID;
-  const token = process.env.TWILIO_AUTH_TOKEN;
-  const from = process.env.TWILIO_WHATSAPP_FROM; // e.g. whatsapp:+14155238886
-  if (!sid || !token || !from) return { success: false, error: 'Twilio not configured' };
+async function sendViaUltraMsg(to, message) {
+  const instanceId = process.env.ULTRAMSG_INSTANCE_ID;
+  const token = process.env.ULTRAMSG_TOKEN;
+  if (!instanceId || !token) return { success: false, error: 'UltraMsg not configured' };
+
+  const p = cleanPhone(to);
+  if (!p) return { success: false, error: 'Invalid phone number' };
+
   try {
-    const twilio = require('twilio')(sid, token);
-    const result = await twilio.messages.create({
-      from,
-      to: `whatsapp:+${cleanPhone(to)}`,
-      body: message,
+    const https = require('https');
+    const body = JSON.stringify({ token, to: p, body: message });
+    const url = `https://api.ultramsg.com/${instanceId}/messages/chat`;
+
+    const result = await new Promise((resolve, reject) => {
+      const req = https.request(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+      }, (res) => {
+        let data = '';
+        res.on('data', chunk => { data += chunk; });
+        res.on('end', () => {
+          try { resolve(JSON.parse(data)); }
+          catch { resolve({ sent: false, message: data }); }
+        });
+      });
+      req.on('error', reject);
+      req.write(body);
+      req.end();
     });
-    return { success: true, externalId: result.sid };
+
+    if (result.sent === true || result.sent === 'true') {
+      return { success: true, externalId: result.id || null };
+    }
+    return { success: false, error: result.message || JSON.stringify(result) };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -85,7 +106,7 @@ async function send({ phone, message, type, orderId, customerId }) {
     return;
   }
 
-  const result = await sendViaTwilio(p, message);
+  const result = await sendViaUltraMsg(p, message);
   logWhatsApp({
     orderId, customerId, type, phone: p, message,
     status: result.success ? 'sent' : 'failed',
