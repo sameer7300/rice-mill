@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE "User" (
+CREATE TABLE IF NOT EXISTS "User" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE "User" (
 );
 
 -- CreateTable
-CREATE TABLE "Supplier" (
+CREATE TABLE IF NOT EXISTS "Supplier" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "businessName" TEXT NOT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE "Supplier" (
 );
 
 -- CreateTable
-CREATE TABLE "Customer" (
+CREATE TABLE IF NOT EXISTS "Customer" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "businessName" TEXT NOT NULL,
@@ -59,7 +59,7 @@ CREATE TABLE "Customer" (
 );
 
 -- CreateTable
-CREATE TABLE "PaddyStock" (
+CREATE TABLE IF NOT EXISTS "PaddyStock" (
     "id" TEXT NOT NULL,
     "variety" TEXT NOT NULL,
     "quantityKg" DOUBLE PRECISION NOT NULL,
@@ -74,7 +74,7 @@ CREATE TABLE "PaddyStock" (
 );
 
 -- CreateTable
-CREATE TABLE "RiceStock" (
+CREATE TABLE IF NOT EXISTS "RiceStock" (
     "id" TEXT NOT NULL,
     "variety" TEXT NOT NULL,
     "grade" TEXT NOT NULL DEFAULT 'A',
@@ -87,7 +87,7 @@ CREATE TABLE "RiceStock" (
 );
 
 -- CreateTable
-CREATE TABLE "MillBatch" (
+CREATE TABLE IF NOT EXISTS "MillBatch" (
     "id" TEXT NOT NULL,
     "batchNumber" TEXT NOT NULL,
     "paddyStockId" TEXT NOT NULL,
@@ -107,7 +107,7 @@ CREATE TABLE "MillBatch" (
 );
 
 -- CreateTable
-CREATE TABLE "Order" (
+CREATE TABLE IF NOT EXISTS "Order" (
     "id" TEXT NOT NULL,
     "orderNumber" TEXT NOT NULL,
     "customerId" TEXT NOT NULL,
@@ -136,7 +136,7 @@ CREATE TABLE "Order" (
 );
 
 -- CreateTable
-CREATE TABLE "OrderItem" (
+CREATE TABLE IF NOT EXISTS "OrderItem" (
     "id" TEXT NOT NULL,
     "orderId" TEXT NOT NULL,
     "riceStockId" TEXT,
@@ -151,7 +151,7 @@ CREATE TABLE "OrderItem" (
 );
 
 -- CreateTable
-CREATE TABLE "Purchase" (
+CREATE TABLE IF NOT EXISTS "Purchase" (
     "id" TEXT NOT NULL,
     "supplierId" TEXT NOT NULL,
     "variety" TEXT NOT NULL,
@@ -168,7 +168,7 @@ CREATE TABLE "Purchase" (
 );
 
 -- CreateTable
-CREATE TABLE "Expense" (
+CREATE TABLE IF NOT EXISTS "Expense" (
     "id" TEXT NOT NULL,
     "category" TEXT NOT NULL,
     "amount" DOUBLE PRECISION NOT NULL,
@@ -180,7 +180,7 @@ CREATE TABLE "Expense" (
 );
 
 -- CreateTable
-CREATE TABLE "Agent" (
+CREATE TABLE IF NOT EXISTS "Agent" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "type" TEXT NOT NULL,
@@ -199,7 +199,7 @@ CREATE TABLE "Agent" (
 );
 
 -- CreateTable
-CREATE TABLE "AgentRun" (
+CREATE TABLE IF NOT EXISTS "AgentRun" (
     "id" TEXT NOT NULL,
     "agentId" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'running',
@@ -214,7 +214,7 @@ CREATE TABLE "AgentRun" (
 );
 
 -- CreateTable
-CREATE TABLE "AgentAlert" (
+CREATE TABLE IF NOT EXISTS "AgentAlert" (
     "id" TEXT NOT NULL,
     "agentId" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -228,7 +228,7 @@ CREATE TABLE "AgentAlert" (
 );
 
 -- CreateTable
-CREATE TABLE "Product" (
+CREATE TABLE IF NOT EXISTS "Product" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "variety" TEXT NOT NULL,
@@ -268,7 +268,7 @@ CREATE TABLE "Product" (
 );
 
 -- CreateTable
-CREATE TABLE "StoreSettings" (
+CREATE TABLE IF NOT EXISTS "StoreSettings" (
     "id" TEXT NOT NULL,
     "storeName" TEXT NOT NULL DEFAULT 'Pakistan Rice Mill',
     "tagline" TEXT NOT NULL DEFAULT 'Premium Quality Rice, Direct from Mill',
@@ -300,7 +300,7 @@ CREATE TABLE "StoreSettings" (
 );
 
 -- CreateTable
-CREATE TABLE "ShippingZone" (
+CREATE TABLE IF NOT EXISTS "ShippingZone" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "countries" TEXT NOT NULL DEFAULT '[]',
@@ -319,7 +319,7 @@ CREATE TABLE "ShippingZone" (
 );
 
 -- CreateTable
-CREATE TABLE "Discount" (
+CREATE TABLE IF NOT EXISTS "Discount" (
     "id" TEXT NOT NULL,
     "code" TEXT NOT NULL,
     "description" TEXT,
@@ -336,7 +336,7 @@ CREATE TABLE "Discount" (
 );
 
 -- CreateTable
-CREATE TABLE "Favorite" (
+CREATE TABLE IF NOT EXISTS "Favorite" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "productId" TEXT NOT NULL,
@@ -346,7 +346,7 @@ CREATE TABLE "Favorite" (
 );
 
 -- CreateTable
-CREATE TABLE "Review" (
+CREATE TABLE IF NOT EXISTS "Review" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "productId" TEXT NOT NULL,
@@ -363,7 +363,7 @@ CREATE TABLE "Review" (
 );
 
 -- CreateTable
-CREATE TABLE "Newsletter" (
+CREATE TABLE IF NOT EXISTS "Newsletter" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "subscribedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -373,7 +373,7 @@ CREATE TABLE "Newsletter" (
 );
 
 -- CreateTable
-CREATE TABLE "BlogPost" (
+CREATE TABLE IF NOT EXISTS "BlogPost" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
@@ -389,7 +389,7 @@ CREATE TABLE "BlogPost" (
 );
 
 -- CreateTable
-CREATE TABLE "Career" (
+CREATE TABLE IF NOT EXISTS "Career" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "department" TEXT NOT NULL,
@@ -416,7 +416,7 @@ CREATE TABLE "Career" (
 );
 
 -- CreateTable
-CREATE TABLE "CareerApplication" (
+CREATE TABLE IF NOT EXISTS "CareerApplication" (
     "id" TEXT NOT NULL,
     "careerId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -447,7 +447,7 @@ CREATE TABLE "CareerApplication" (
 );
 
 -- CreateTable
-CREATE TABLE "WhatsAppLog" (
+CREATE TABLE IF NOT EXISTS "WhatsAppLog" (
     "id" TEXT NOT NULL,
     "orderId" TEXT,
     "customerId" TEXT,
@@ -463,7 +463,7 @@ CREATE TABLE "WhatsAppLog" (
 );
 
 -- CreateTable
-CREATE TABLE "ContactMessage" (
+CREATE TABLE IF NOT EXISTS "ContactMessage" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
@@ -477,7 +477,7 @@ CREATE TABLE "ContactMessage" (
 );
 
 -- CreateTable
-CREATE TABLE "Address" (
+CREATE TABLE IF NOT EXISTS "Address" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "label" TEXT NOT NULL DEFAULT 'Home',
@@ -499,7 +499,7 @@ CREATE TABLE "Address" (
 );
 
 -- CreateTable
-CREATE TABLE "SavedPaymentMethod" (
+CREATE TABLE IF NOT EXISTS "SavedPaymentMethod" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "type" TEXT NOT NULL,
@@ -514,7 +514,7 @@ CREATE TABLE "SavedPaymentMethod" (
 );
 
 -- CreateTable
-CREATE TABLE "LoginSession" (
+CREATE TABLE IF NOT EXISTS "LoginSession" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "token" TEXT NOT NULL,
@@ -530,7 +530,7 @@ CREATE TABLE "LoginSession" (
 );
 
 -- CreateTable
-CREATE TABLE "RecentlyViewed" (
+CREATE TABLE IF NOT EXISTS "RecentlyViewed" (
     "id" TEXT NOT NULL,
     "userId" TEXT,
     "sessionId" TEXT,
@@ -541,7 +541,7 @@ CREATE TABLE "RecentlyViewed" (
 );
 
 -- CreateTable
-CREATE TABLE "StockAlert" (
+CREATE TABLE IF NOT EXISTS "StockAlert" (
     "id" TEXT NOT NULL,
     "userId" TEXT,
     "email" TEXT NOT NULL,
@@ -555,7 +555,7 @@ CREATE TABLE "StockAlert" (
 );
 
 -- CreateTable
-CREATE TABLE "DeliveryNotice" (
+CREATE TABLE IF NOT EXISTS "DeliveryNotice" (
     "id" TEXT NOT NULL,
     "supplierId" TEXT NOT NULL,
     "variety" TEXT NOT NULL,
@@ -572,7 +572,7 @@ CREATE TABLE "DeliveryNotice" (
 );
 
 -- CreateTable
-CREATE TABLE "PricingTier" (
+CREATE TABLE IF NOT EXISTS "PricingTier" (
     "id" TEXT NOT NULL,
     "label" TEXT NOT NULL,
     "rangeLabel" TEXT NOT NULL,
@@ -589,7 +589,7 @@ CREATE TABLE "PricingTier" (
 );
 
 -- CreateTable
-CREATE TABLE "WholesalePageContent" (
+CREATE TABLE IF NOT EXISTS "WholesalePageContent" (
     "id" TEXT NOT NULL,
     "heroTitle" TEXT NOT NULL DEFAULT 'Wholesale & Export',
     "heroSubtitle" TEXT,
@@ -605,7 +605,7 @@ CREATE TABLE "WholesalePageContent" (
 );
 
 -- CreateTable
-CREATE TABLE "FAQ" (
+CREATE TABLE IF NOT EXISTS "FAQ" (
     "id" TEXT NOT NULL,
     "question" TEXT NOT NULL,
     "answer" TEXT NOT NULL,
@@ -618,7 +618,7 @@ CREATE TABLE "FAQ" (
 );
 
 -- CreateTable
-CREATE TABLE "WholesaleInquiry" (
+CREATE TABLE IF NOT EXISTS "WholesaleInquiry" (
     "id" TEXT NOT NULL,
     "productId" TEXT,
     "customerId" TEXT,
@@ -638,7 +638,7 @@ CREATE TABLE "WholesaleInquiry" (
 );
 
 -- CreateTable
-CREATE TABLE "ChatConversation" (
+CREATE TABLE IF NOT EXISTS "ChatConversation" (
     "id" TEXT NOT NULL,
     "customerId" TEXT,
     "guestName" TEXT,
@@ -657,7 +657,7 @@ CREATE TABLE "ChatConversation" (
 );
 
 -- CreateTable
-CREATE TABLE "ChatMessage" (
+CREATE TABLE IF NOT EXISTS "ChatMessage" (
     "id" TEXT NOT NULL,
     "conversationId" TEXT NOT NULL,
     "senderId" TEXT,
@@ -672,7 +672,7 @@ CREATE TABLE "ChatMessage" (
 );
 
 -- CreateTable
-CREATE TABLE "VisitorSession" (
+CREATE TABLE IF NOT EXISTS "VisitorSession" (
     "id" TEXT NOT NULL,
     "sessionId" TEXT NOT NULL,
     "userId" TEXT,
@@ -699,7 +699,7 @@ CREATE TABLE "VisitorSession" (
 );
 
 -- CreateTable
-CREATE TABLE "PageView" (
+CREATE TABLE IF NOT EXISTS "PageView" (
     "id" TEXT NOT NULL,
     "sessionId" TEXT NOT NULL,
     "userId" TEXT,
@@ -715,7 +715,7 @@ CREATE TABLE "PageView" (
 );
 
 -- CreateTable
-CREATE TABLE "CookieConsent" (
+CREATE TABLE IF NOT EXISTS "CookieConsent" (
     "id" TEXT NOT NULL,
     "sessionId" TEXT NOT NULL,
     "userId" TEXT,
@@ -729,7 +729,7 @@ CREATE TABLE "CookieConsent" (
 );
 
 -- CreateTable
-CREATE TABLE "DataRequest" (
+CREATE TABLE IF NOT EXISTS "DataRequest" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "type" TEXT NOT NULL DEFAULT 'basic',
@@ -745,7 +745,7 @@ CREATE TABLE "DataRequest" (
 );
 
 -- CreateTable
-CREATE TABLE "RefreshToken" (
+CREATE TABLE IF NOT EXISTS "RefreshToken" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "token" TEXT NOT NULL,
@@ -759,7 +759,7 @@ CREATE TABLE "RefreshToken" (
 );
 
 -- CreateTable
-CREATE TABLE "LoyaltyPoint" (
+CREATE TABLE IF NOT EXISTS "LoyaltyPoint" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "points" INTEGER NOT NULL,
@@ -772,52 +772,52 @@ CREATE TABLE "LoyaltyPoint" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_referralCode_key" ON "User"("referralCode");
+CREATE UNIQUE INDEX IF NOT EXISTS "User_referralCode_key" ON "User"("referralCode");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Supplier_userId_key" ON "Supplier"("userId");
+CREATE UNIQUE INDEX IF NOT EXISTS "Supplier_userId_key" ON "Supplier"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Customer_userId_key" ON "Customer"("userId");
+CREATE UNIQUE INDEX IF NOT EXISTS "Customer_userId_key" ON "Customer"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "MillBatch_batchNumber_key" ON "MillBatch"("batchNumber");
+CREATE UNIQUE INDEX IF NOT EXISTS "MillBatch_batchNumber_key" ON "MillBatch"("batchNumber");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Order_orderNumber_key" ON "Order"("orderNumber");
+CREATE UNIQUE INDEX IF NOT EXISTS "Order_orderNumber_key" ON "Order"("orderNumber");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Product_sku_key" ON "Product"("sku");
+CREATE UNIQUE INDEX IF NOT EXISTS "Product_sku_key" ON "Product"("sku");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Discount_code_key" ON "Discount"("code");
+CREATE UNIQUE INDEX IF NOT EXISTS "Discount_code_key" ON "Discount"("code");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Favorite_userId_productId_key" ON "Favorite"("userId", "productId");
+CREATE UNIQUE INDEX IF NOT EXISTS "Favorite_userId_productId_key" ON "Favorite"("userId", "productId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Review_userId_productId_key" ON "Review"("userId", "productId");
+CREATE UNIQUE INDEX IF NOT EXISTS "Review_userId_productId_key" ON "Review"("userId", "productId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Newsletter_email_key" ON "Newsletter"("email");
+CREATE UNIQUE INDEX IF NOT EXISTS "Newsletter_email_key" ON "Newsletter"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "BlogPost_slug_key" ON "BlogPost"("slug");
+CREATE UNIQUE INDEX IF NOT EXISTS "BlogPost_slug_key" ON "BlogPost"("slug");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "LoginSession_token_key" ON "LoginSession"("token");
+CREATE UNIQUE INDEX IF NOT EXISTS "LoginSession_token_key" ON "LoginSession"("token");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "VisitorSession_sessionId_key" ON "VisitorSession"("sessionId");
+CREATE UNIQUE INDEX IF NOT EXISTS "VisitorSession_sessionId_key" ON "VisitorSession"("sessionId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "CookieConsent_sessionId_key" ON "CookieConsent"("sessionId");
+CREATE UNIQUE INDEX IF NOT EXISTS "CookieConsent_sessionId_key" ON "CookieConsent"("sessionId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "RefreshToken_token_key" ON "RefreshToken"("token");
+CREATE UNIQUE INDEX IF NOT EXISTS "RefreshToken_token_key" ON "RefreshToken"("token");
 
 -- AddForeignKey
 ALTER TABLE "Supplier" ADD CONSTRAINT "Supplier_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
