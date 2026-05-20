@@ -135,7 +135,7 @@ router.post('/send-registration-otp', async (req, res) => {
     res.json({ message: 'OTP sent successfully', channel });
   } catch (err) {
     logger.error('send-registration-otp error', err);
-    res.status(500).json({ message: 'Server error', debug: err?.message || String(err) });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
