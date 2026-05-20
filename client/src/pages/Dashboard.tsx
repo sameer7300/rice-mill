@@ -472,30 +472,34 @@ function CustomerDashboard({ user }: { user: any }) {
     <PageTransition>
     <div className="space-y-6">
       {/* Header card */}
-      <div className="bg-gradient-to-r from-green-800 to-green-700 rounded-2xl p-6 text-white flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-2xl font-bold">
-            {user?.name?.[0]?.toUpperCase()}
+      <div className="bg-gradient-to-r from-green-800 to-green-700 rounded-2xl p-5 sm:p-6 text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 rounded-2xl flex items-center justify-center text-xl sm:text-2xl font-bold flex-shrink-0">
+              {user?.name?.[0]?.toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-lg sm:text-xl font-bold truncate">{user?.name}</p>
+              <p className="text-green-200 text-xs sm:text-sm truncate">{user?.email}</p>
+              <p className="text-green-300 text-xs mt-0.5">Customer Account</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xl font-bold">{user?.name}</p>
-            <p className="text-green-200 text-sm">{user?.email}</p>
-            <p className="text-green-300 text-xs mt-0.5">Customer Account</p>
-          </div>
+          <Link to="/" className="self-start sm:self-auto text-xs text-green-200 hover:text-white border border-white/30 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap flex-shrink-0">
+            ← Back to Shop
+          </Link>
         </div>
-        <Link to="/" className="text-xs text-green-200 hover:text-white border border-white/30 px-3 py-1.5 rounded-lg transition-colors">
-          ← Back to Shop
-        </Link>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-white rounded-2xl p-1.5 shadow-sm border border-gray-100 overflow-x-auto">
-        {CUST_TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${tab === t.id ? 'bg-green-700 text-white shadow' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}>
-            {t.icon} {t.label}
-          </button>
-        ))}
+      {/* Tabs — scrollable on mobile */}
+      <div className="bg-white rounded-2xl p-1.5 shadow-sm border border-gray-100 overflow-x-auto">
+        <div className="flex gap-1 min-w-max sm:min-w-0 sm:flex-wrap">
+          {CUST_TABS.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${tab === t.id ? 'bg-green-700 text-white shadow' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}>
+              {t.icon} <span className="hidden sm:inline">{t.label}</span><span className="sm:hidden">{t.label.split(' ')[0]}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ─── MY ORDERS ─────────────────────────────────────────────────── */}

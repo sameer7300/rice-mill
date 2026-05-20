@@ -257,7 +257,7 @@ export default function ProductDetail() {
 
   return (
     <PageTransition>
-    <div className="max-w-5xl mx-auto px-4 py-10">
+    <div className="max-w-5xl mx-auto px-4 py-6 md:py-10">
       <Helmet>
         <title>{product.name} — Al-Noor Rice Mills</title>
         <meta name="description" content={product.shortDescription || `Buy ${product.name} (${product.variety}, Grade ${product.grade}) from Al-Noor Rice Mills. ${formatPKR(product.pricePerKg)}/kg.`} />
@@ -266,14 +266,14 @@ export default function ProductDetail() {
         {product.imageUrl && <meta property="og:image" content={product.imageUrl} />}
       </Helmet>
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-gray-400 mb-6">
+      <nav className="flex items-center gap-2 text-sm text-gray-400 mb-4 md:mb-6">
         <Link to="/" className="hover:text-green-600">Shop</Link>
         <ChevronRight size={14} />
-        <span className="text-gray-700 font-medium">{product.name}</span>
+        <span className="text-gray-700 font-medium truncate max-w-[200px] sm:max-w-none">{product.name}</span>
       </nav>
 
       {/* Product main */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 mb-8 md:mb-10">
         {/* Image gallery */}
         <ProductGallery product={product} />
 
@@ -281,7 +281,7 @@ export default function ProductDetail() {
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
           <div>
             <p className="text-sm text-gray-400 mb-0.5">{product.variety}</p>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
             {totalReviews > 0 && (
               <button onClick={() => setActiveTab('Reviews')} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                 <StarRating rating={avgRating} />
@@ -291,7 +291,7 @@ export default function ProductDetail() {
           </div>
 
           <div className="flex items-end gap-2">
-            <span className="text-4xl font-extrabold text-green-700">{formatPKR(product.pricePerKg)}</span>
+            <span className="text-3xl sm:text-4xl font-extrabold text-green-700">{formatPKR(product.pricePerKg)}</span>
             <span className="text-gray-400 mb-1">/kg</span>
           </div>
 
@@ -323,32 +323,34 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3">
             <button onClick={handleAddToCart} disabled={!product.inStock}
-              className={`flex-1 py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors ${!product.inStock ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : inCart ? 'bg-green-100 text-green-700 border-2 border-green-200 hover:bg-green-200' : 'bg-green-700 hover:bg-green-800 text-white shadow-sm'}`}>
-              <ShoppingCart size={18} />
+              className={`flex-1 py-3 sm:py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors ${!product.inStock ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : inCart ? 'bg-green-100 text-green-700 border-2 border-green-200 hover:bg-green-200' : 'bg-green-700 hover:bg-green-800 text-white shadow-sm'}`}>
+              <ShoppingCart size={16} />
               {!product.inStock ? 'Out of Stock' : inCart ? 'Add More' : 'Add to Cart'}
             </button>
             <button onClick={toggleFavorite}
-              className={`p-3.5 rounded-xl border-2 transition-colors ${favorited ? 'border-red-300 text-red-500 bg-red-50' : 'border-gray-200 text-gray-400 hover:border-red-300 hover:text-red-400'}`}>
+              className={`p-3 sm:p-3.5 rounded-xl border-2 transition-colors flex-shrink-0 ${favorited ? 'border-red-300 text-red-500 bg-red-50' : 'border-gray-200 text-gray-400 hover:border-red-300 hover:text-red-400'}`}>
               <Heart size={18} className={favorited ? 'fill-red-500' : ''} />
             </button>
           </div>
 
           {/* Ask about product */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={fastTween}
-            className="border border-gray-200 rounded-xl p-4 bg-gray-50 flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <MessageCircle size={20} className="text-green-600" />
+            className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <MessageCircle size={18} className="text-green-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900 text-sm">Have a question about this product?</p>
+                <p className="text-xs text-gray-500">Usually replies within 1 hour</p>
+              </div>
+              <button onClick={() => setChatOpen(true)}
+                className="flex-shrink-0 flex items-center gap-1.5 px-3 sm:px-4 py-2 border-2 border-green-600 text-green-700 hover:bg-green-600 hover:text-white rounded-xl text-xs sm:text-sm font-semibold transition-colors">
+                Ask Us →
+              </button>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-gray-900 text-sm">Have a question about this product?</p>
-              <p className="text-xs text-gray-500">Usually replies within 1 hour</p>
-            </div>
-            <button onClick={() => setChatOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 border-2 border-green-600 text-green-700 hover:bg-green-600 hover:text-white rounded-xl text-sm font-semibold transition-colors flex-shrink-0">
-              Ask Us →
-            </button>
           </motion.div>
 
           {/* Stock Alert — show when out of stock */}
@@ -425,12 +427,12 @@ export default function ProductDetail() {
         </motion.div>
       </div>
 
-      {/* Tab bar — layoutId animated underline */}
-      <div className="border-b border-gray-200 mb-8">
-        <div className="flex gap-1">
+      {/* Tab bar — scrollable on mobile */}
+      <div className="border-b border-gray-200 mb-6 md:mb-8 overflow-x-auto">
+        <div className="flex gap-0 min-w-max sm:min-w-0">
           {PRODUCT_TABS.map(t => (
             <button key={t} onClick={() => setActiveTab(t)}
-              className={`relative px-5 py-3 text-sm font-medium transition-colors ${activeTab === t ? 'text-green-700' : 'text-gray-500 hover:text-gray-700'}`}>
+              className={`relative px-4 sm:px-5 py-2.5 sm:py-3 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === t ? 'text-green-700' : 'text-gray-500 hover:text-gray-700'}`}>
               {t}{t === 'Reviews' && totalReviews > 0 ? ` (${totalReviews})` : ''}
               {activeTab === t && (
                 <motion.div
