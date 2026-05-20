@@ -102,7 +102,7 @@ export default function Layout() {
           <NavLink key={link.to} to={link.to} title={link.label}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all mb-0.5 ${collapsed ? 'justify-center' : ''} ${
-                isActive ? 'bg-green-600 text-white shadow-lg shadow-green-900/30' : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                isActive ? 'bg-green-600 text-white shadow-lg shadow-green-900/30' : 'text-gray-300 hover:text-white hover:bg-gray-800'
               }`
             }>
             <span className="flex-shrink-0 relative">
@@ -125,22 +125,22 @@ export default function Layout() {
       <div className="border-t border-gray-800 p-2 space-y-0.5 flex-shrink-0">
         {!collapsed && (
           <div className="px-3 py-1.5 text-xs">
-            <p className="font-medium text-gray-400 truncate">{user?.name}</p>
-            <p className="capitalize text-gray-600">{user?.role}</p>
+            <p className="font-medium text-gray-300 truncate">{user?.name}</p>
+            <p className="capitalize text-gray-400">{user?.role}</p>
           </div>
         )}
         <a href="/" target="_blank" rel="noreferrer" title={collapsed ? 'Visit Store' : undefined}
-          className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors ${collapsed ? 'justify-center' : ''}`}>
+          className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-xl text-gray-300 hover:text-white hover:bg-gray-800 transition-colors ${collapsed ? 'justify-center' : ''}`}>
           <ExternalLink size={16} className="flex-shrink-0" />
           {!collapsed && <span>Visit Store</span>}
         </a>
         <button onClick={toggleLang} title={collapsed ? (lang === 'en' ? 'اردو' : 'English') : undefined}
-          className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors ${collapsed ? 'justify-center' : ''}`}>
+          className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-xl text-gray-300 hover:text-white hover:bg-gray-800 transition-colors ${collapsed ? 'justify-center' : ''}`}>
           <Languages size={16} className="flex-shrink-0" />
           {!collapsed && <span>{lang === 'en' ? 'اردو' : 'English'}</span>}
         </button>
         <button onClick={handleLogout} title={collapsed ? 'Logout' : undefined}
-          className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-900/20 transition-colors ${collapsed ? 'justify-center' : ''}`}>
+          className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-xl text-gray-300 hover:text-red-400 hover:bg-red-900/20 transition-colors ${collapsed ? 'justify-center' : ''}`}>
           <LogOut size={16} className="flex-shrink-0" />
           {!collapsed && <span>{t('nav.logout')}</span>}
         </button>

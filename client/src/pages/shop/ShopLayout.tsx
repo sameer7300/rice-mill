@@ -410,7 +410,7 @@ export default function ShopLayout() {
       {/* ── FOOTER ──────────────────────────────────────────────────────── */}
       <footer>
         {/* Main footer */}
-        <div className="bg-green-900 text-gray-300">
+        <div className="bg-green-900 text-gray-200 dark:text-gray-100">
           <div className="max-w-6xl mx-auto px-4 py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Brand */}
             <div>
@@ -420,11 +420,11 @@ export default function ShopLayout() {
                 </div>
                 <div>
                   <p className="font-bold text-white text-sm">Al-Noor Rice Mills</p>
-                  <p className="text-xs text-gray-400">Est. 2010</p>
+                  <p className="text-xs text-gray-300 dark:text-gray-200">Est. 2010</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-400 mb-4 leading-relaxed">{settings.tagline || 'Premium quality rice, directly from our mill in Batkhela to your doorstep.'}</p>
-              <div className="space-y-1.5 text-sm text-gray-400">
+              <p className="text-sm text-gray-300 dark:text-gray-200 mb-4 leading-relaxed">{settings.tagline || 'Premium quality rice, directly from our mill in Batkhela to your doorstep.'}</p>
+              <div className="space-y-1.5 text-sm text-gray-300 dark:text-gray-200">
                 <p className="flex items-start gap-1.5"><MapPin size={13} className="mt-0.5 flex-shrink-0" /> Main GT Road, Batkhela, Malakand, KPK 23200</p>
                 <a href="tel:+9294612345" className="flex items-center gap-1.5 hover:text-green-400 transition-colors"><Phone size={13} /> +92-946-123456</a>
                 <a href="tel:+923001234567" className="flex items-center gap-1.5 hover:text-green-400 transition-colors"><Phone size={13} /> +92-300-1234567</a>
@@ -436,7 +436,7 @@ export default function ShopLayout() {
                   { icon: <Instagram size={15} />, href: '#' },
                   { icon: <Youtube size={15} />, href: '#' },
                 ].map((s, i) => (
-                  <a key={i} href={s.href} className="w-8 h-8 bg-green-800 hover:bg-green-600 rounded-lg flex items-center justify-center transition-colors text-gray-300 hover:text-white">
+                  <a key={i} href={s.href} className="w-8 h-8 bg-green-700 hover:bg-green-600 rounded-lg flex items-center justify-center transition-colors text-gray-200 hover:text-white">
                     {s.icon}
                   </a>
                 ))}
@@ -461,13 +461,13 @@ export default function ShopLayout() {
                   ['New Arrivals', '/?sort=newest'],
                   ['Track Order', '/track'],
                 ].map(([l, h]) => (
-                  <li key={l}><Link to={h} className="text-gray-400 hover:text-green-400 transition-colors">{l}</Link></li>
+                  <li key={l}><Link to={h} className="text-gray-300 dark:text-gray-200 hover:text-green-400 transition-colors">{l}</Link></li>
                 ))}
               </ul>
               <p className="font-bold text-white mb-3 mt-6 text-sm uppercase tracking-wide">For Business</p>
               <ul className="space-y-2 text-sm">
                 {[['Wholesale Inquiry', '/wholesale'], ['Bulk Orders (500kg+)', '/wholesale'], ['Seller / Admin Login', '/login']].map(([l, h]) => (
-                  <li key={l}><Link to={h} className="text-gray-400 hover:text-green-400 transition-colors">{l}</Link></li>
+                  <li key={l}><Link to={h} className="text-gray-300 dark:text-gray-200 hover:text-green-400 transition-colors">{l}</Link></li>
                 ))}
               </ul>
             </div>
@@ -482,7 +482,7 @@ export default function ShopLayout() {
                   ['Careers', '/careers'],
                   ['Contact Us', '/contact'],
                 ].map(([l, h]) => (
-                  <li key={l}><Link to={h} className="text-gray-400 hover:text-green-400 transition-colors">{l}</Link></li>
+                  <li key={l}><Link to={h} className="text-gray-300 dark:text-gray-200 hover:text-green-400 transition-colors">{l}</Link></li>
                 ))}
               </ul>
               <p className="font-bold text-white mb-3 mt-6 text-sm uppercase tracking-wide">Support</p>
@@ -494,7 +494,7 @@ export default function ShopLayout() {
                   ['Privacy Policy', '/policies/privacy'],
                   ['Terms & Conditions', '/policies/terms'],
                 ].map(([l, h]) => (
-                  <li key={l}><Link to={h} className="text-gray-400 hover:text-green-400 transition-colors">{l}</Link></li>
+                  <li key={l}><Link to={h} className="text-gray-300 dark:text-gray-200 hover:text-green-400 transition-colors">{l}</Link></li>
                 ))}
               </ul>
             </div>
@@ -517,11 +517,11 @@ export default function ShopLayout() {
                   </>
                 )}
               </ul>
-              <div className="bg-green-800 rounded-xl p-4">
+              <div className="bg-green-800 dark:bg-green-900 rounded-xl p-4">
                 <p className="text-xs font-bold text-white uppercase tracking-wide mb-2">Business Hours</p>
-                <p className="text-sm text-gray-300">Mon – Sat</p>
+                <p className="text-sm text-gray-200 dark:text-gray-100">Mon – Sat</p>
                 <p className="text-sm font-semibold text-white">8:00 AM – 6:00 PM PKT</p>
-                <p className="text-xs text-gray-400 mt-2">Closed Sundays &amp; public holidays</p>
+                <p className="text-xs text-gray-300 dark:text-gray-200 mt-2">Closed Sundays &amp; public holidays</p>
               </div>
             </div>
           </div>
@@ -530,12 +530,12 @@ export default function ShopLayout() {
         {/* Bottom bar */}
         <div className="bg-green-950 py-4 px-4">
           <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-gray-500 text-center md:text-left">
+            <p className="text-xs text-gray-300 dark:text-gray-200 text-center md:text-left">
               © {new Date().getFullYear()} Al-Noor Rice Mills. All rights reserved. · Made with ❤️ in Batkhela, Pakistan
             </p>
             <div className="flex items-center gap-3 flex-wrap justify-center">
               {['COD', 'Bank Transfer', 'EasyPaisa', 'JazzCash', 'Visa / Mastercard', 'Bank Wire', 'PayPal'].map(p => (
-                <span key={p} className="text-xs text-gray-400 bg-green-900 px-2.5 py-1 rounded-full">{p}</span>
+                <span key={p} className="text-xs text-gray-300 dark:text-gray-200 bg-green-800 dark:bg-green-900 px-2.5 py-1 rounded-full">{p}</span>
               ))}
             </div>
             <div className="flex items-center gap-4 flex-wrap justify-center">
